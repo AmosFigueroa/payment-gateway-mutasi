@@ -58,7 +58,6 @@
             btn.disabled = true;
 
             try {
-                // Panggil API Vercel Kamu
                 const res = await fetch('/api/checkout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -72,7 +71,6 @@
                 const data = await res.json();
 
                 if(data.status === 'success') {
-                    // Tampilkan Data
                     document.getElementById('formSection').classList.add('hidden');
                     document.getElementById('resultSection').classList.remove('hidden');
                     
