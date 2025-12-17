@@ -1,76 +1,67 @@
-const express = require("express");
+const express = require('express');
 const app = express();
 
 app.use(express.json());
 
-// --- KONFIGURASI ---
-// Ganti ini dengan password rahasia yang sama dengan di MacroDroid
-const SECRET_KEY = "rahasia123";
+// --- KONFIGURASI PRODUKSI ---
+// Password diambil dari Environment Variable Vercel (Aman)
+const SECRET_KEY = process.env.SECRET_KEY;
 
 // --- FUNGSI BANTUAN ---
-// Mengubah teks "Rp 100.123" menjadi angka 100123
 function parseAmount(text) {
-  if (!text) return 0;
-  // Hapus semua karakter kecuali angka
-  const cleanNumber = text.replace(/[^0-9]/g, "");
-  return parseInt(cleanNumber, 10) || 0;
+    if (!text) return 0;
+    // Hapus karakter non-angka (Rp, titik, koma)
+    const cleanNumber = text.replace(/[^0-9]/g, '');
+    return parseInt(cleanNumber, 10) || 0;
 }
 
 // --- ROUTE UTAMA ---
-app.get("/", (req, res) => {
-  res.send("Server Payment Gateway Aktif!");
+app.get('/', (req, res) => {
+    res.json({ status: "active", mode: "production" });
 });
 
-app.post("/webhook/mutasi", (req, res) => {
-  try {
-    const { secret_key, message, app_name } = req.body;
+app.post('/webhook/mutasi', async (req, res) => {
+    try {
+        const { secret_key, message, app_name } = req.body;
 
-    // 1. Cek Keamanan
-    if (secret_key !== SECRET_KEY) {
-      return res.status(401).json({
-        status: "error",
-        message: "Kunci rahasia salah!",
-      });
+        // 1. Validasi Keamanan (Wajib ada SECRET_KEY di Vercel)
+        if (!SECRET_KEY) {
+            console.error("[CRITICAL] SECRET_KEY belum disetting di Vercel!");
+            return res.status(500).json({ status: 'error', message: 'Server misconfiguration' });
+        }
+
+        if (secret_key !== SECRET_KEY) {
+            console.warn(`[WARNING] Percobaan akses ilegal dari IP: ${req.ip}`);
+            return res.status(401).json({ status: 'error', message: 'Akses Ditolak: Password Salah' });
+        }
+
+        // 2. Parsing Data
+        const amount = parseAmount(message);
+        console.log(`[INFO] Mutasi Masuk: Rp ${amount} via ${app_name}`);
+
+        if (amount <= 0) {
+            return res.status(400).json({ status: 'ignored', message: 'Nominal tidak terdeteksi' });
+        }
+
+        // 3. TODO: INTEGRASI DATABASE (Production)
+        // Di sini tempat Anda update status order user di database Anda (MySQL/Mongo/Supabase)
+        // Contoh logika:
+        // const order = await db.orders.find({ total_tagihan: amount, status: 'UNPAID' });
+        // if (order) { await db.orders.update({ id: order.id }, { status: 'PAID' }); }
+
+        return res.json({
+            status: 'success',
+            data: {
+                received_amount: amount,
+                source_app: app_name,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error("[ERROR]", error);
+        return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
-
-    console.log(`[INFO] Notifikasi dari ${app_name}: ${message}`);
-
-    // 2. Ambil Nominal
-    const amount = parseAmount(message);
-
-    if (amount === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Tidak ada nominal terdeteksi",
-      });
-    }
-
-    // 3. LOGIKA DATABASE (Di sini Anda sambungkan ke Database nanti)
-    // Karena di Vercel tidak bisa simpan data variabel (hilang saat refresh),
-    // di sini kita hanya simulasi sukses.
-
-    /* TODO: Sambungkan ke Database (Supabase/MongoDB/MySQL)
-           Contoh logika:
-           let order = await db.orders.find({ total: amount, status: 'pending' });
-           if(order) { updateStatus(order.id, 'success'); }
-        */
-
-    // Simulasi Respon Sukses
-    return res.json({
-      status: "success",
-      data: {
-        original_text: message,
-        detected_amount: amount,
-        note: "Silakan sambungkan ke database untuk update status order otomatis.",
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "Internal Server Error" });
-  }
 });
 
-// Penting untuk Vercel: Export app, jangan app.listen()
 module.exports = app;
