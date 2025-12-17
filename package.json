@@ -1,16 +1,13 @@
 {
   "name": "payment-gateway-mutasi",
   "version": "1.0.0",
-  "description": "Simple Payment Gateway Notification Listener",
-  "main": "index.js",
+  "description": "Webhook untuk menerima notifikasi dari Macrodroid",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node index.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies": {
-    "express": "^4.18.2"
-  },
+  "dependencies": {},
   "engines": {
-    "node": "20.x"
+    "node": "18.x"
   }
 }
-
