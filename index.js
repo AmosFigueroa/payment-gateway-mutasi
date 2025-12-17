@@ -1,69 +1,110 @@
-export default async function handler(req, res) {
-  // --- KONFIGURASI ---
-  // Masukkan Secret Key Anda di sini
-  const MY_SECRET_KEY = "RYZR6.CY6W-u6-Do"; 
+// api/index.js
 
-  // --- 1. CEK METODE (Wajib POST) ---
+export default async function handler(req, res) {
+  // 1. Cek Method (Harus POST)
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      success: false, 
-      message: 'Method Not Allowed. Gunakan POST.' 
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // 2. Ambil Variable dari Environment Vercel
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const secretKey = process.env.SECRET_KEY;
+
+  // 3. Ambil data yang dikirim Macrodroid
+  const { package_name, message, secret } = req.body;
+
+  // 4. Validasi Keamanan
+  if (secret !== secretKey) {
+    return res.status(401).json({ error: 'Unauthorized: Salah Secret Key' });
   }
 
   try {
-    // --- 2. VALIDASI KUNCI RAHASIA (UNIVERSAL) ---
-    // Script ini akan mencari kunci di 4 tempat berbeda secara urut:
-    const receivedKey = 
-      req.query.secret_key ||                                 // 1. Cek di URL (?secret_key=...) -> INI SOLUSI UTAMA ANDA
-      (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]) || // 2. Cek Header Bearer
-      req.headers['x-api-key'] ||                             // 3. Cek Header X-API-KEY
-      req.body.secret_key;                                    // 4. Cek di dalam Body JSON
+    // 5. Logic Deteksi Sumber Aplikasi & QRIS
+    let source = "Unknown App";
+    let icon = "📱";
+    
+    // Normalisasi teks agar pencarian lebih mudah (huruf kecil semua)
+    const pkg = package_name ? package_name.toLowerCase() : "";
+    const msg = message ? message.toLowerCase() : "";
 
-    // Jika kunci tidak ditemukan atau salah
-    if (receivedKey !== MY_SECRET_KEY) {
-      console.warn(`[WARNING] Akses ditolak dari IP: ${req.headers['x-forwarded-for'] || 'Unknown'}`);
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Akses Ditolak: Secret Key salah atau tidak ditemukan.' 
-      });
+    // DETEKSI GOPAY MERCHANT / GOBIZ / QRIS
+    if (pkg.includes("gobiz")) {
+      source = "GoPay Merchant (GoBiz)";
+      icon = "🏪";
+    } 
+    else if ((pkg.includes("gojek") || pkg.includes("gopay")) && (msg.includes("qris") || msg.includes("merchant"))) {
+      source = "GoPay QRIS";
+      icon = "🏪";
+    }
+    // DETEKSI LAINNYA
+    else if (pkg.includes("gojek") || pkg.includes("gopay")) {
+      source = "GOPAY Personal";
+      icon = "🟢";
+    }
+    else if (pkg.includes("dana")) {
+      source = "DANA";
+      icon = "🔵";
+    }
+    else if (pkg.includes("ovo")) {
+      source = "OVO";
+      icon = "🟣";
+    }
+    else if (pkg.includes("bca")) {
+      source = "BCA Mobile";
+      icon = "🏦";
+    }
+    else if (pkg.includes("livin") || pkg.includes("mandiri")) {
+      source = "Livin Mandiri";
+      icon = "ye";
+    }
+    else if (pkg.includes("brimo")) {
+      source = "BRImo";
+      icon = "🏦";
+    }
+    else if (pkg.includes("seabank")) {
+      source = "SeaBank";
+      icon = "🟧";
+    }
+    else {
+      source = package_name; // Jika tidak dikenal
     }
 
-    // --- 3. MENANGKAP DATA PESAN (FLEXIBLE) ---
-    // Mencegah error "null" dengan mengecek berbagai kemungkinan nama variabel
-    const sender = req.body.sender || req.body.title || req.body.from || "Unknown";
-    const rawMessage = req.body.message || req.body.msg || req.body.body || req.body.text || "";
+    // 6. Logic Parsing Nominal (Mengambil angka Rupiah)
+    // Mencari format Rp 10.000, Rp10.000, atau 10.000 masuk
+    const nominalMatch = message.match(/Rp\s?[\d,.]+/i);
+    let nominal = nominalMatch ? nominalMatch[0] : "Cek Manual";
 
-    // Log ke dashboard Vercel untuk memantau pesan masuk
-    console.log(`[INFO] Pesan Masuk dari ${sender}: "${rawMessage}"`);
+    // 7. Format Pesan untuk Telegram
+    const textTelegram = `
+${icon} *MUTASI MASUK: ${source}*
+-----------------------------
+💰 *Nominal:* ${nominal}
+📦 *Aplikasi:* ${package_name}
+📩 *Pesan Asli:*
+_${message}_
+-----------------------------
+⏰ ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
+    `;
 
-    // --- 4. (OPSIONAL) PARSING NOMINAL RUPIAH ---
-    // Contoh sederhana mengambil angka setelah "Rp" (Misal: "Dana masuk Rp 50.000")
-    let detectedAmount = 0;
-    // Regex mencari pola "Rp" diikuti spasi opsional dan angka/titik
-    const amountMatch = rawMessage.match(/Rp\s?([\d\.]+)/i); 
-    if (amountMatch) {
-      // Hapus titik (.) agar menjadi integer murni (50000)
-      detectedAmount = parseInt(amountMatch[1].replace(/\./g, ''));
-    }
-
-    // --- 5. SUKSES (RESPON 200 OK) ---
-    // Memberi tahu aplikasi Android bahwa data sudah diterima
-    return res.status(200).json({
-      success: true,
-      message: 'Data berhasil diterima server',
-      data: {
-        sender: sender,
-        amount: detectedAmount,
-        original_message: rawMessage
-      }
+    // 8. Kirim ke Telegram API
+    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    
+    await fetch(telegramUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: textTelegram,
+        parse_mode: 'Markdown'
+      })
     });
+
+    // 9. Response Sukses
+    return res.status(200).json({ status: 'success', source: source });
 
   } catch (error) {
-    console.error("[ERROR] Server Error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Terjadi kesalahan pada server Vercel.' 
-    });
+    console.error(error);
+    return res.status(500).json({ status: 'error', message: 'Gagal memproses data' });
   }
 }
