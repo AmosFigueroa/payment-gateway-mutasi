@@ -1,67 +1,69 @@
-const express = require('express');
-const app = express();
+export default async function handler(req, res) {
+  // --- KONFIGURASI ---
+  // Masukkan Secret Key Anda di sini
+  const MY_SECRET_KEY = "RYZR6.CY6W-u6-Do"; 
 
-app.use(express.json());
+  // --- 1. CEK METODE (Wajib POST) ---
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      success: false, 
+      message: 'Method Not Allowed. Gunakan POST.' 
+    });
+  }
 
-// --- KONFIGURASI PRODUKSI ---
-// Password diambil dari Environment Variable Vercel (Aman)
-const SECRET_KEY = process.env.SECRET_KEY;
+  try {
+    // --- 2. VALIDASI KUNCI RAHASIA (UNIVERSAL) ---
+    // Script ini akan mencari kunci di 4 tempat berbeda secara urut:
+    const receivedKey = 
+      req.query.secret_key ||                                 // 1. Cek di URL (?secret_key=...) -> INI SOLUSI UTAMA ANDA
+      (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]) || // 2. Cek Header Bearer
+      req.headers['x-api-key'] ||                             // 3. Cek Header X-API-KEY
+      req.body.secret_key;                                    // 4. Cek di dalam Body JSON
 
-// --- FUNGSI BANTUAN ---
-function parseAmount(text) {
-    if (!text) return 0;
-    // Hapus karakter non-angka (Rp, titik, koma)
-    const cleanNumber = text.replace(/[^0-9]/g, '');
-    return parseInt(cleanNumber, 10) || 0;
-}
-
-// --- ROUTE UTAMA ---
-app.get('/', (req, res) => {
-    res.json({ status: "active", mode: "production" });
-});
-
-app.post('/webhook/mutasi', async (req, res) => {
-    try {
-        const { secret_key, message, app_name } = req.body;
-
-        // 1. Validasi Keamanan (Wajib ada SECRET_KEY di Vercel)
-        if (!SECRET_KEY) {
-            console.error("[CRITICAL] SECRET_KEY belum disetting di Vercel!");
-            return res.status(500).json({ status: 'error', message: 'Server misconfiguration' });
-        }
-
-        if (secret_key !== SECRET_KEY) {
-            console.warn(`[WARNING] Percobaan akses ilegal dari IP: ${req.ip}`);
-            return res.status(401).json({ status: 'error', message: 'Akses Ditolak: Password Salah' });
-        }
-
-        // 2. Parsing Data
-        const amount = parseAmount(message);
-        console.log(`[INFO] Mutasi Masuk: Rp ${amount} via ${app_name}`);
-
-        if (amount <= 0) {
-            return res.status(400).json({ status: 'ignored', message: 'Nominal tidak terdeteksi' });
-        }
-
-        // 3. TODO: INTEGRASI DATABASE (Production)
-        // Di sini tempat Anda update status order user di database Anda (MySQL/Mongo/Supabase)
-        // Contoh logika:
-        // const order = await db.orders.find({ total_tagihan: amount, status: 'UNPAID' });
-        // if (order) { await db.orders.update({ id: order.id }, { status: 'PAID' }); }
-
-        return res.json({
-            status: 'success',
-            data: {
-                received_amount: amount,
-                source_app: app_name,
-                timestamp: new Date().toISOString()
-            }
-        });
-
-    } catch (error) {
-        console.error("[ERROR]", error);
-        return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    // Jika kunci tidak ditemukan atau salah
+    if (receivedKey !== MY_SECRET_KEY) {
+      console.warn(`[WARNING] Akses ditolak dari IP: ${req.headers['x-forwarded-for'] || 'Unknown'}`);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Akses Ditolak: Secret Key salah atau tidak ditemukan.' 
+      });
     }
-});
 
-module.exports = app;
+    // --- 3. MENANGKAP DATA PESAN (FLEXIBLE) ---
+    // Mencegah error "null" dengan mengecek berbagai kemungkinan nama variabel
+    const sender = req.body.sender || req.body.title || req.body.from || "Unknown";
+    const rawMessage = req.body.message || req.body.msg || req.body.body || req.body.text || "";
+
+    // Log ke dashboard Vercel untuk memantau pesan masuk
+    console.log(`[INFO] Pesan Masuk dari ${sender}: "${rawMessage}"`);
+
+    // --- 4. (OPSIONAL) PARSING NOMINAL RUPIAH ---
+    // Contoh sederhana mengambil angka setelah "Rp" (Misal: "Dana masuk Rp 50.000")
+    let detectedAmount = 0;
+    // Regex mencari pola "Rp" diikuti spasi opsional dan angka/titik
+    const amountMatch = rawMessage.match(/Rp\s?([\d\.]+)/i); 
+    if (amountMatch) {
+      // Hapus titik (.) agar menjadi integer murni (50000)
+      detectedAmount = parseInt(amountMatch[1].replace(/\./g, ''));
+    }
+
+    // --- 5. SUKSES (RESPON 200 OK) ---
+    // Memberi tahu aplikasi Android bahwa data sudah diterima
+    return res.status(200).json({
+      success: true,
+      message: 'Data berhasil diterima server',
+      data: {
+        sender: sender,
+        amount: detectedAmount,
+        original_message: rawMessage
+      }
+    });
+
+  } catch (error) {
+    console.error("[ERROR] Server Error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Terjadi kesalahan pada server Vercel.' 
+    });
+  }
+}
