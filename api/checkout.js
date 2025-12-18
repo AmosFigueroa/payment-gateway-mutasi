@@ -3,7 +3,6 @@ import QRCode from 'qrcode';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Schema Order
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   product_name: String,
@@ -11,14 +10,15 @@ const OrderSchema = new mongoose.Schema({
   amount_original: Number,
   unique_code: Number,
   total_pay: Number,
+  method: String,
   status: { type: String, default: 'UNPAID' },
   qris_string: String,
-  created_at: { type: Date, default: Date.now } // Waktu order dibuat
+  created_at: { type: Date, default: Date.now }
 });
 
 const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 
-// Helper CRC16 untuk QRIS
+// Helper CRC16
 function crc16(str) {
   let crc = 0xFFFF;
   for (let i = 0; i < str.length; i++) {
@@ -46,34 +46,63 @@ function convertToDynamic(qrisRaw, amount) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // --- GANTI DENGAN STRING QRIS ASLI KAMU ---
-  const MY_QRIS = "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204721053033605802ID5925WAGO SHOESPA CUCI SEPATU 6006SLEMAN61055529462070703A016304EFA8"; 
+  // --- DATA REKENING (EDIT DISINI) ---
+  const DATA_PAYMENT = {
+    qris: "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204721053033605802ID5925WAGO SHOESPA CUCI SEPATU 6006SLEMAN61055529462070703A016304EFA8", // Paste String QRIS Panjang Kamu
+    seabank: "1234567890 a.n Rizky imam surya permana",
+    bni: "1905467404 a.n Rizky imam surya permana",
+    dana: "088221744129 a.n Wago ID",
+    gopay: "085171592306 a.n Wago ID",
+  };
 
   try {
     if (mongoose.connection.readyState !== 1) {
       await mongoose.connect(MONGODB_URI);
     }
 
-    const { product_name, price, customer_contact } = req.body;
+    const { product_name, price, customer_contact, method } = req.body;
+    let selectedMethod = method || 'qris';
+    const nominal = parseInt(price);
 
-    // --- LOGIC KODE UNIK 1 DIGIT (1 - 9) ---
-    const uniqueCode = Math.floor(Math.random() * 9) + 1;
-    const totalPay = parseInt(price) + uniqueCode;
+    // --- 1. VALIDASI MIN & MAX ---
+    if (nominal < 1000) return res.status(400).json({ error: "Minimal Topup Rp 1.000" });
+    if (nominal > 1000000) return res.status(400).json({ error: "Maksimal Topup Rp 1.000.000" });
 
-    // Generate QRIS
-    const dynamicQris = convertToDynamic(MY_QRIS, totalPay);
-    const qrImage = await QRCode.toDataURL(dynamicQris);
+    // --- 2. VALIDASI METODE VS HARGA ---
+    // Kalau nominal < 100.000, paksa jadi QRIS meskipun user milih BCA
+    if (nominal < 100000 && selectedMethod !== 'qris') {
+      return res.status(400).json({ error: "Transfer Bank hanya untuk transaksi di atas Rp 100.000" });
+    }
 
-    // Simpan ke Database
+    // Logic Kode Unik
+    const uniqueCode = Math.floor(Math.random() * 99) + 1;
+    const totalPay = nominal + uniqueCode;
+
+    let qrImage = null;
+    let paymentInfo = "";
+
+    if (selectedMethod === 'qris') {
+      const dynamicQris = convertToDynamic(DATA_PAYMENT.qris, totalPay);
+      qrImage = await QRCode.toDataURL(dynamicQris);
+      paymentInfo = "Scan QRIS di atas";
+    } else {
+      if(DATA_PAYMENT[selectedMethod]) {
+        paymentInfo = DATA_PAYMENT[selectedMethod];
+      } else {
+        return res.status(400).json({ error: "Metode tidak tersedia" });
+      }
+    }
+
     const newOrder = await Order.create({
       order_id: "ORD-" + Date.now(),
       product_name: product_name,
       customer_contact: customer_contact,
-      amount_original: price,
+      amount_original: nominal,
       unique_code: uniqueCode,
       total_pay: totalPay,
+      method: selectedMethod,
       status: 'UNPAID',
-      qris_string: dynamicQris
+      qris_string: selectedMethod === 'qris' ? qrImage : '-'
     });
 
     return res.status(200).json({
@@ -81,11 +110,12 @@ export default async function handler(req, res) {
       order_id: newOrder.order_id,
       total_pay: totalPay,
       qr_image: qrImage,
-      expired_in: "1 Jam"
+      payment_info: paymentInfo,
+      method: selectedMethod
     });
 
   } catch (error) {
-    console.error("Checkout Error:", error);
+    console.error(error);
     return res.status(500).json({ error: 'Gagal membuat tagihan' });
   }
 }
