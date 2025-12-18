@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Schema HARUS SAMA PERSIS dengan checkout.js
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   product_name: String,
@@ -24,7 +23,6 @@ export default async function handler(req, res) {
   const chatId = process.env.TELEGRAM_CHAT_ID;
   const secretKey = process.env.SECRET_KEY;
   
-  // Terima Data dari Macrodroid (Format Terpisah)
   const { package_name, title, text, big_text, secret } = req.body;
 
   if (secret !== secretKey) return res.status(401).json({ error: 'Salah Secret' });
@@ -34,30 +32,41 @@ export default async function handler(req, res) {
       await mongoose.connect(MONGODB_URI);
     }
 
-    // Gabung semua teks notifikasi jadi satu string panjang
     const fullMessage = `${title || ''} ${text || ''} ${big_text || ''}`;
     
-    // Ambil Angka Rupiah
+    // --- PERBAIKAN: PEMBERSIH ANGKA RUPIAH ---
     const nominalMatch = fullMessage.match(/Rp\s?[\d,.]+/i);
-    let nominalReceived = nominalMatch ? parseInt(nominalMatch[0].replace(/[^0-9]/g, '')) : 0;
+    let nominalReceived = 0;
+    
+    if (nominalMatch) {
+      // Hilangkan ",00" atau ".00" di belakang agar tidak terbacanya jutaan
+      let rawString = nominalMatch[0].replace(/[,.]00$/g, ''); 
+      // Ambil angka saja
+      nominalReceived = parseInt(rawString.replace(/[^0-9]/g, ''));
+    }
 
-    // --- CARI ORDER YANG COCOK DI DATABASE ---
-    // Syarat: Status belum bayar (UNPAID) DAN Nominalnya sama persis
+    // --- CARI ORDER YANG COCOK ---
+    // Syarat:
+    // 1. Status UNPAID
+    // 2. Nominal sama persis
+    // 3. Dibuat dalam 1 JAM TERAKHIR (Expired Check)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
     const paidOrder = await Order.findOne({ 
       status: 'UNPAID', 
-      total_pay: nominalReceived 
+      total_pay: nominalReceived,
+      created_at: { $gte: oneHourAgo } // Harus lebih baru dari 1 jam lalu
     });
 
-    let statusLaporan = "❌ Tidak ada tagihan yang cocok (Mungkin Topup Biasa)";
+    let statusLaporan = "❌ Tidak ada tagihan valid (Mungkin Expired/Topup Biasa)";
     
     if (paidOrder) {
-      // KETEMU! Update jadi LUNAS
       paidOrder.status = 'PAID';
       await paidOrder.save();
       statusLaporan = `✅ LUNAS! Order ID: ${paidOrder.order_id}`;
     }
 
-    // --- KIRIM LAPORAN KE TELEGRAM ---
+    // KIRIM KE TELEGRAM
     const textTelegram = `
 💰 *UANG MASUK: Rp ${nominalReceived.toLocaleString()}*
 -----------------------------
@@ -65,7 +74,7 @@ export default async function handler(req, res) {
 👤 Pembeli: ${paidOrder ? paidOrder.customer_contact : '-'}
 📝 Status: ${statusLaporan}
 -----------------------------
-_Pesan Asli: ${fullMessage.substring(0, 50)}..._
+_Msg: ${fullMessage.substring(0, 50)}..._
     `;
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
