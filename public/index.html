@@ -3,168 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wago Store - Payment</title>
+    <title>Payment Gateway - Automated</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>body{font-family:'Inter',sans-serif;}</style>
+    <style>
+        body{font-family:'Inter',sans-serif;}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        .payment-card { cursor: pointer; transition: all 0.2s; border: 2px solid #e5e7eb; }
+        .payment-card:hover { border-color: #3b82f6; background-color: #eff6ff; }
+        .payment-card.selected { border-color: #2563eb; background-color: #eff6ff; ring: 2px solid #2563eb; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-
     <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-gray-200 relative overflow-hidden">
         
         <div class="text-center mb-6">
-            <h1 class="text-xl font-extrabold text-gray-800">💎 Wago Store</h1>
-            <p class="text-xs text-gray-400">Secure Automated Payment</p>
+            <h1 id="storeName" class="text-xl font-extrabold text-gray-800 tracking-tight">💎 Loading Store...</h1>
+            <p class="text-xs text-gray-400 font-medium">Secure Automated Payment</p>
         </div>
 
-        <div id="step1">
+        <div id="step1" class="animate-fade-in">
             <div class="space-y-4">
                 <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase">Produk</label>
-                    <input type="text" id="productName" value="Diamond ML (86)" class="w-full mt-1 p-3 bg-gray-50 border rounded-xl text-sm font-semibold text-gray-700">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Informasi Pesanan</label>
+                    <input type="text" id="productName" class="w-full mt-1 p-3 bg-gray-50 border rounded-xl text-sm font-semibold text-gray-700 outline-none" readonly>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" id="customerWa" placeholder="WA (08xxx)" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500">
+                    <input type="email" id="customerEmail" placeholder="Email" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
-                    <input type="number" id="customerWa" placeholder="08xxxx" class="w-full mt-1 p-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Harga (Rp)</label>
+                    <input type="number" id="price" class="w-full mt-1 p-3 bg-blue-50 border border-blue-200 rounded-xl font-mono font-bold text-lg text-blue-700 outline-none" readonly>
                 </div>
+
                 <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase">Nominal (Rp)</label>
-                    <input type="number" id="price" value="1000" class="w-full mt-1 p-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono font-bold text-lg">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Pilih Pembayaran</label>
+                    <input type="hidden" id="paymentMethod" value="qris">
+                    <div class="space-y-2" id="methodList">
+                        <div onclick="selectMethod('qris')" id="card-qris" class="payment-card selected flex items-center p-3 rounded-xl">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 mr-3">
+                            <div class="flex-1"><p class="text-sm font-bold text-gray-800">QRIS Instan</p></div>
+                            <div class="radio-ui w-4 h-4 rounded-full border border-blue-600 flex items-center justify-center"><div class="w-2 h-2 bg-blue-600 rounded-full"></div></div>
+                        </div>
+                        <div id="bankOptions" class="hidden space-y-2">
+                            <div onclick="selectMethod('bca')" id="card-bca" class="payment-card flex items-center p-3 rounded-xl">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/2560px-Bank_Central_Asia.svg.png" class="h-4 mr-3">
+                                <div class="flex-1"><p class="text-sm font-bold text-gray-800">Bank BCA</p></div>
+                                <div class="radio-ui w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center"><div class="w-2 h-2 bg-blue-600 rounded-full hidden"></div></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="checkout()" id="btnBayar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all transform active:scale-95">
-                    BELI SEKARANG
-                </button>
+
+                <button onclick="checkout()" id="btnBayar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">BELI SEKARANG</button>
             </div>
         </div>
 
-        <div id="step2" class="hidden text-center">
-            
-            <div class="bg-red-50 text-red-600 px-4 py-2 rounded-full text-sm font-bold inline-block mb-4 animate-pulse">
-                ⏳ Sisa Waktu: <span id="timerDisplay">59:59</span>
-            </div>
-
-            <p class="text-gray-500 text-xs uppercase tracking-widest mb-1">Total Transfer</p>
-            <div class="text-4xl font-black text-gray-900 mb-2 tracking-tighter" id="totalPayDisplay">Rp 0</div>
-            <p class="text-xs text-red-500 font-bold bg-red-100 py-1 px-2 rounded inline-block mb-4">⚠️ JANGAN DIBULATKAN!</p>
-
-            <div class="relative group">
-                <img id="qrImage" src="" class="w-64 h-64 mx-auto rounded-xl border-4 border-gray-900 shadow-2xl">
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 rounded-xl transition cursor-pointer" onclick="downloadQr()">
-                    <span class="text-white font-bold">📲 Download QR</span>
-                </div>
-            </div>
-
-            <p class="mt-4 text-sm text-gray-600">Scan pakai DANA / GoPay / Shopee / BCA</p>
-            
-            <div class="mt-6 border-t pt-4">
-                <div class="flex justify-between text-xs text-gray-400">
-                    <span>Order ID:</span>
-                    <span id="orderIdDisplay" class="font-mono text-gray-600">-</span>
-                </div>
-                <div class="mt-4 flex items-center justify-center gap-2 text-xs text-blue-500 animate-bounce">
-                    <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    Menunggu Pembayaran Otomatis...
-                </div>
-            </div>
+        <div id="step2" class="hidden text-center animate-fade-in">
+            <div class="bg-red-50 text-red-600 px-4 py-2 rounded-full text-sm font-bold inline-block mb-4 animate-pulse">⏳ <span id="timerDisplay">59:59</span></div>
+            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Wajib Bayar Sesuai Nominal</p>
+            <div class="text-4xl font-black text-gray-900 mb-4" id="totalPayDisplay">Rp 0</div>
+            <div id="paymentContainer" class="mb-4"></div>
+            <p class="text-[10px] text-gray-400 mb-4">Order ID: <span id="orderIdDisplay"></span></p>
+            <button onclick="location.reload()" class="text-xs text-gray-400 hover:underline">Batalkan Pesanan</button>
         </div>
 
-        <div id="step3" class="hidden text-center py-10">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            </div>
-            <h2 class="text-2xl font-black text-gray-800 mb-2">PEMBAYARAN SUKSES!</h2>
-            <p class="text-gray-500 text-sm mb-6">Terima kasih, pesananmu sedang diproses otomatis.</p>
-            <button onclick="location.reload()" class="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm">Beli Lagi</button>
+        <div id="step3" class="hidden text-center py-10 animate-fade-in">
+             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+             <h2 class="text-2xl font-black text-gray-800">PEMBAYARAN SUKSES!</h2>
+             <p class="text-sm text-gray-500 mb-6">Cek email kamu untuk detail transaksi.</p>
+             <button onclick="location.reload()" class="bg-black text-white px-8 py-3 rounded-xl font-bold">Kembali</button>
         </div>
-
     </div>
 
     <script>
-        let intervalCheck;
-        let countdownInterval;
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            // Ambil Nama Store, Produk, dan Harga dari URL
+            document.getElementById('storeName').innerText = "💎 " + (decodeURIComponent(params.get('store')) || "Wago Store");
+            document.getElementById('productName').value = decodeURIComponent(params.get('prod')) || "Produk Pilihan";
+            const price = parseInt(params.get('price')) || 1000;
+            document.getElementById('price').value = price;
+            if(params.get('wa')) document.getElementById('customerWa').value = params.get('wa');
+            
+            // Tampilkan Bank jika harga >= 100.000
+            if(price >= 100000) document.getElementById('bankOptions').classList.remove('hidden');
+        };
+
+        function selectMethod(m) {
+            document.getElementById('paymentMethod').value = m;
+            document.querySelectorAll('.payment-card').forEach(c => {
+                c.classList.remove('selected', 'border-blue-600');
+                c.querySelector('.radio-ui div').classList.add('hidden');
+            });
+            const sel = document.getElementById('card-'+m);
+            sel.classList.add('selected');
+            sel.querySelector('.radio-ui div').classList.remove('hidden');
+        }
 
         async function checkout() {
             const btn = document.getElementById('btnBayar');
-            const pName = document.getElementById('productName').value;
-            const pPrice = document.getElementById('price').value;
-            const pWa = document.getElementById('customerWa').value;
-
-            if(!pWa || !pPrice) return alert("Isi data dulu bos!");
-
+            const data = {
+                product_name: document.getElementById('productName').value,
+                price: document.getElementById('price').value,
+                customer_contact: document.getElementById('customerWa').value,
+                customer_email: document.getElementById('customerEmail').value,
+                method: document.getElementById('paymentMethod').value
+            };
+            if(!data.customer_contact || !data.customer_email) return alert("Isi Nomor WA dan Email!");
+            
             btn.innerText = "Memproses...";
             btn.disabled = true;
 
             try {
-                const res = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ product_name: pName, price: pPrice, customer_contact: pWa })
-                });
-                const data = await res.json();
-
-                if(data.status === 'success') {
-                    // Pindah ke Halaman QR
+                const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                const resData = await res.json();
+                if(resData.status === 'success') {
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.remove('hidden');
-
-                    // Isi Data
-                    document.getElementById('qrImage').src = data.qr_image;
-                    document.getElementById('totalPayDisplay').innerText = "Rp " + data.total_pay.toLocaleString('id-ID');
-                    document.getElementById('orderIdDisplay').innerText = data.order_id;
-
-                    // Mulai Timer & Cek Status
-                    startTimer(60 * 60); // 1 Jam
-                    startCheckingStatus(data.order_id);
-                } else {
-                    alert("Error: " + data.error);
-                    btn.disabled = false;
+                    document.getElementById('totalPayDisplay').innerText = "Rp " + resData.total_pay.toLocaleString('id-ID');
+                    document.getElementById('orderIdDisplay').innerText = resData.order_id;
+                    const cont = document.getElementById('paymentContainer');
+                    if(resData.qr_image) cont.innerHTML = `<img src="${resData.qr_image}" class="w-64 h-64 mx-auto rounded-xl border-4 border-black mb-2 shadow-lg animate-fade-in">`;
+                    else cont.innerHTML = `<div class="bg-blue-50 p-6 rounded-xl font-bold border-2 border-dashed border-blue-300 text-blue-800 animate-fade-in"><p class="text-xs">Silakan Transfer ke Rekening:</p><p class="text-lg mt-1">${resData.payment_info}</p></div>`;
+                    startTimer(3600);
+                    startCheckingStatus(resData.order_id);
                 }
-            } catch(e) {
-                alert("Server Error");
-                btn.disabled = false;
-            }
+            } catch(e) { alert("Gagal membuat tagihan"); btn.disabled = false; btn.innerText = "BELI SEKARANG"; }
         }
 
         function startTimer(duration) {
-            let timer = duration, minutes, seconds;
-            const display = document.getElementById('timerDisplay');
-            
-            countdownInterval = setInterval(function () {
-                minutes = parseInt(timer / 60, 10);
-                seconds = parseInt(timer % 60, 10);
-
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                display.textContent = minutes + ":" + seconds;
-
-                if (--timer < 0) {
-                    clearInterval(countdownInterval);
-                    alert("Waktu Habis! Silakan order ulang.");
-                    location.reload();
-                }
+            let t = duration;
+            setInterval(() => {
+                let m = parseInt(t/60, 10), s = parseInt(t%60, 10);
+                document.getElementById('timerDisplay').innerText = (m < 10 ? "0"+m : m) + ":" + (s < 10 ? "0"+s : s);
+                if(--t < 0) location.reload();
             }, 1000);
         }
 
-        function startCheckingStatus(orderId) {
-            // Cek setiap 3 detik
-            intervalCheck = setInterval(async () => {
-                try {
-                    const res = await fetch('/api/status?order_id=' + orderId);
-                    const data = await res.json();
-
-                    if (data.status === 'PAID') {
-                        clearInterval(intervalCheck);
-                        clearInterval(countdownInterval);
-                        
-                        // Tampilkan Layar Sukses
-                        document.getElementById('step2').classList.add('hidden');
-                        document.getElementById('step3').classList.remove('hidden');
-                    }
-                } catch (err) {
-                    console.log("Cek status gagal, mencoba lagi...");
+        function startCheckingStatus(id) {
+            const checker = setInterval(async () => {
+                const res = await fetch('/api/status?order_id='+id);
+                const d = await res.json();
+                if(d.status === 'PAID') {
+                    clearInterval(checker);
+                    document.getElementById('step2').classList.add('hidden');
+                    document.getElementById('step3').classList.remove('hidden');
                 }
-            }, 3000); 
+            }, 3000);
         }
     </script>
 </body>
