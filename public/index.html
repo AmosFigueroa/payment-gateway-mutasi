@@ -23,9 +23,7 @@
             <div id="logoContainer" class="hidden mb-3">
                 <img id="storeLogo" src="" class="h-16 w-16 mx-auto rounded-xl shadow-sm object-contain bg-white border border-gray-100 p-1">
             </div>
-            
             <div id="defaultIcon" class="text-4xl mb-2">💎</div>
-
             <h1 id="storeName" class="text-xl font-extrabold text-gray-800 tracking-tight">Loading...</h1>
             <p class="text-xs text-gray-400 font-medium">Secure Payment Gateway</p>
         </div>
@@ -88,82 +86,55 @@
             </div>
             <h2 class="text-3xl font-black text-gray-800 mb-2">LUNAS!</h2>
             <p class="text-sm text-gray-500 mb-6 px-4">Pembayaran berhasil. Pesanan diproses otomatis.</p>
-            
-            <button onclick="goBackToStore()" id="btnBackStore" class="w-full bg-gray-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-1">
-                Kembali ke Toko
-            </button>
-
-            <p id="debugUrl" class="mt-4 text-[10px] text-red-400 font-mono bg-red-50 p-2 rounded border border-red-200 break-all">
-                Debug: Menunggu parameter URL...
-            </p>
+            <button onclick="goBackToStore()" id="btnBackStore" class="w-full bg-gray-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-1">Kembali ke Toko</button>
         </div>
-
     </div>
 
     <script>
-        // VARIABLE GLOBAL
         let returnUrl = ""; 
+        let refId = ""; // Variable untuk menyimpan ID Titipan
 
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
-            
-            // 1. TANGKAP LINK TUJUAN
-            // Cek parameter 'return', kalau gak ada cek 'callback', kalau gak ada cek 'referrer'
             returnUrl = params.get('return') || params.get('callback') || document.referrer || "";
             
-            // Tampilkan info debug di layar agar jelas
-            const debugText = returnUrl ? "Link Tujuan: " + returnUrl : "⚠️ URL KOSONG! Tambahkan &return=... di link.";
-            document.getElementById('debugUrl').innerText = debugText;
+            // TANGKAP REF ID (ID TRANSAKSI DARI INSTABOOTH/DLL)
+            refId = params.get('ref_id') || "";
 
-            // 2. SETUP TAMPILAN TOKO
+            // LOGIKA TAMPILAN (Sama seperti sebelumnya)
             const storeName = decodeURIComponent(params.get('store') || "Wago Store");
             document.getElementById('storeName').innerText = storeName;
-
-            // 3. AUTO LOGO (Canggih)
+            
             let logoSrc = params.get('logo') || ""; 
             if (!logoSrc && returnUrl) {
                 try {
-                    // Ambil domain dari returnUrl untuk cari favicon
                     let safeUrl = returnUrl.startsWith('http') ? returnUrl : 'https://' + returnUrl;
                     const domain = new URL(safeUrl).hostname;
                     logoSrc = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
                 } catch(e) {}
             }
-
             if (logoSrc) {
                 document.getElementById('storeLogo').src = logoSrc;
                 document.getElementById('logoContainer').classList.remove('hidden');
-                document.getElementById('defaultIcon').classList.add('hidden'); // Sembunyikan icon default
+                document.getElementById('defaultIcon').classList.add('hidden');
             }
+            if(storeName && storeName !== "Wago Store") document.getElementById('btnBackStore').innerText = "Kembali ke " + storeName;
 
-            if(storeName && storeName !== "Wago Store") {
-                document.getElementById('btnBackStore').innerText = "Kembali ke " + storeName;
-            }
-
-            // 4. AUTO FILL FORM
+            // AUTO FILL
             document.getElementById('productName').value = decodeURIComponent(params.get('prod')) || "Produk";
             const price = parseInt(params.get('price')) || 1000;
             document.getElementById('price').value = price;
             if(params.get('wa')) document.getElementById('customerWa').value = params.get('wa');
             if(params.get('email')) document.getElementById('customerEmail').value = params.get('email');
-            
             if(price >= 100000) document.getElementById('bankOptions').classList.remove('hidden');
         };
 
-        // FUNGSI KLIK TOMBOL BALIK
         function goBackToStore() {
-            if (!returnUrl) {
-                alert("Link tujuan tidak ditemukan! Pastikan URL mengandung &return=https://websitekamu.com");
-                return;
-            }
-            // Auto-fix https
-            if (!returnUrl.startsWith('http://') && !returnUrl.startsWith('https://')) {
-                returnUrl = 'https://' + returnUrl;
-            }
+            if (!returnUrl) return alert("Link tujuan tidak ditemukan!");
+            if (!returnUrl.startsWith('http')) returnUrl = 'https://' + returnUrl;
             window.location.href = returnUrl;
         }
 
-        // FUNGSI PILIH METODE
         function selectMethod(m) {
             document.getElementById('paymentMethod').value = m;
             document.querySelectorAll('.payment-card').forEach(c => {
@@ -175,7 +146,6 @@
             sel.querySelector('.radio-ui div').classList.remove('hidden');
         }
 
-        // FUNGSI CHECKOUT
         async function checkout() {
             const btn = document.getElementById('btnBayar');
             const data = {
@@ -183,7 +153,8 @@
                 price: document.getElementById('price').value,
                 customer_contact: document.getElementById('customerWa').value,
                 customer_email: document.getElementById('customerEmail').value,
-                method: document.getElementById('paymentMethod').value
+                method: document.getElementById('paymentMethod').value,
+                ref_id: refId // KIRIM ID TITIPAN KE SERVER
             };
             if(!data.customer_contact || !data.customer_email) return alert("Lengkapi Data!");
             btn.innerText = "Memproses..."; btn.disabled = true;
