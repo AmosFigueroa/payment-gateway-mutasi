@@ -20,6 +20,10 @@
     <div class="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-100 relative overflow-hidden transition-all duration-300">
         
         <div class="text-center mb-6">
+            <div id="logoContainer" class="hidden mb-3">
+                <img id="storeLogo" src="" class="h-16 w-16 mx-auto rounded-xl shadow-sm object-contain bg-white border border-gray-100 p-1">
+            </div>
+
             <h1 id="storeName" class="text-xl font-extrabold text-gray-800 tracking-tight">💎 Loading...</h1>
             <p class="text-xs text-gray-400 font-medium">Secure Payment Gateway</p>
         </div>
@@ -34,7 +38,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <input type="number" id="customerWa" placeholder="No. WhatsApp" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500 transition">
-                    <input type="email" id="customerEmail" placeholder="Email (Invoice)" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500 transition">
+                    <input type="email" id="customerEmail" placeholder="Email" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500 transition">
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Bayar (Rp)</label>
@@ -60,7 +64,7 @@
                     </div>
                 </div>
 
-                <button onclick="checkout()" id="btnBayar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-95">BELI SEKARANG</button>
+                <button onclick="checkout()" id="btnBayar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-4">BELI SEKARANG</button>
             </div>
         </div>
 
@@ -68,9 +72,7 @@
             <div class="bg-red-50 text-red-600 px-4 py-2 rounded-full text-xs font-bold inline-block mb-4 animate-pulse">⏳ Sisa Waktu: <span id="timerDisplay">59:59</span></div>
             <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Total Transfer Persis</p>
             <div class="text-4xl font-black text-gray-900 mb-4 tracking-tight" id="totalPayDisplay">Rp 0</div>
-            
             <div id="paymentContainer" class="mb-4 transform transition-all"></div>
-            
             <div class="bg-gray-50 p-3 rounded-lg border border-dashed border-gray-300">
                 <p class="text-[10px] text-gray-400">Order ID:</p>
                 <p id="orderIdDisplay" class="font-mono text-xs text-gray-600 font-bold select-all">-</p>
@@ -83,8 +85,7 @@
                 <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 class="text-3xl font-black text-gray-800 mb-2">LUNAS!</h2>
-            <p class="text-sm text-gray-500 mb-8 px-4">Pembayaran berhasil diverifikasi. Pesanan kamu sedang diproses otomatis.</p>
-            
+            <p class="text-sm text-gray-500 mb-8 px-4">Pembayaran berhasil. Pesanan diproses otomatis.</p>
             <button onclick="goBackToStore()" id="btnBackStore" class="w-full bg-gray-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-1">
                 Kembali ke Toko
             </button>
@@ -93,57 +94,64 @@
     </div>
 
     <script>
-        // Variable Global untuk Link Balik
         let returnUrl = ""; 
 
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
-            
-            // 1. AMBIL LINK RETURN (AUTO DETECT)
-            // Prioritas: Parameter 'return' -> 'callback'
             returnUrl = params.get('return') || params.get('callback') || "";
-
-            // 2. AMBIL INFO TOKO
             const storeName = decodeURIComponent(params.get('store') || "Wago Store");
-            document.getElementById('storeName').innerText = "💎 " + storeName;
+
+            // --- 🚀 LOGIKA AUTO LOGO ---
+            let logoSrc = "";
             
-            // Update Teks Tombol agar sesuai nama toko
+            // 1. Kalau ada parameter return, ambil domainnya
+            if (returnUrl) {
+                try {
+                    // Tambah https jika belum ada agar URL constructor tidak error
+                    let safeUrl = returnUrl.startsWith('http') ? returnUrl : 'https://' + returnUrl;
+                    const urlObj = new URL(safeUrl);
+                    const domain = urlObj.hostname;
+                    
+                    // Gunakan Google Favicon Service (Gratis)
+                    logoSrc = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                } catch(e) { console.log("Gagal ambil logo domain"); }
+            }
+
+            // 2. Tampilkan Logo
+            const logoImg = document.getElementById('storeLogo');
+            const logoCont = document.getElementById('logoContainer');
+            const title = document.getElementById('storeName');
+
+            if (logoSrc) {
+                logoImg.src = logoSrc;
+                logoCont.classList.remove('hidden');
+                title.innerText = storeName; // Hapus emoji karena sudah ada logo
+            } else {
+                title.innerText = "💎 " + storeName; // Pakai emoji default
+            }
+
+            // Update nama tombol
             if(storeName && storeName !== "Wago Store") {
                 document.getElementById('btnBackStore').innerText = "Kembali ke " + storeName;
             }
 
-            // 3. AUTO FILL FORM
+            // AUTO FILL FORM
             document.getElementById('productName').value = decodeURIComponent(params.get('prod')) || "Produk";
             const price = parseInt(params.get('price')) || 1000;
             document.getElementById('price').value = price;
             if(params.get('wa')) document.getElementById('customerWa').value = params.get('wa');
             if(params.get('email')) document.getElementById('customerEmail').value = params.get('email');
             
-            // Tampilkan Bank jika > 100rb
             if(price >= 100000) document.getElementById('bankOptions').classList.remove('hidden');
         };
 
-        // --- FUNGSI TOMBOL KEMBALI (YANG DIPERBAIKI) ---
         function goBackToStore() {
-            console.log("Klik Back. URL:", returnUrl);
-
-            // A. Cek apakah ada link?
             if (!returnUrl) {
-                // Jika kosong, coba pakai fitur Back browser
-                if (document.referrer) {
-                    window.history.back();
-                } else {
-                    alert("Link tujuan tidak ditemukan di URL (param &return=...)");
-                }
+                if (document.referrer) window.history.back();
+                else alert("Link tujuan tidak ditemukan di URL");
                 return;
             }
-
-            // B. Auto-Fix: Tambahkan https:// jika lupa ditulis
-            if (!returnUrl.startsWith('http://') && !returnUrl.startsWith('https://')) {
-                returnUrl = 'https://' + returnUrl;
-            }
-
-            // C. Pindah Halaman
+            if (!returnUrl.startsWith('http')) returnUrl = 'https://' + returnUrl;
             window.location.href = returnUrl;
         }
 
@@ -167,30 +175,23 @@
                 customer_email: document.getElementById('customerEmail').value,
                 method: document.getElementById('paymentMethod').value
             };
-            if(!data.customer_contact || !data.customer_email) return alert("Harap isi No. WA dan Email!");
-            
-            btn.innerText = "Memproses...";
-            btn.disabled = true;
+            if(!data.customer_contact || !data.customer_email) return alert("Lengkapi Data!");
+            btn.innerText = "Memproses..."; btn.disabled = true;
 
             try {
                 const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
-                const resData = await res.json();
-                if(resData.status === 'success') {
+                const d = await res.json();
+                if(d.status === 'success') {
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.remove('hidden');
-                    document.getElementById('totalPayDisplay').innerText = "Rp " + resData.total_pay.toLocaleString('id-ID');
-                    document.getElementById('orderIdDisplay').innerText = resData.order_id;
+                    document.getElementById('totalPayDisplay').innerText = "Rp " + d.total_pay.toLocaleString('id-ID');
+                    document.getElementById('orderIdDisplay').innerText = d.order_id;
                     const cont = document.getElementById('paymentContainer');
-                    
-                    if(resData.qr_image) {
-                        cont.innerHTML = `<img src="${resData.qr_image}" class="w-64 h-64 mx-auto rounded-xl border-4 border-black mb-2 shadow-xl animate-fade-in">`;
-                    } else {
-                        cont.innerHTML = `<div class="bg-blue-50 p-6 rounded-xl font-bold border-2 border-dashed border-blue-300 text-blue-800 animate-fade-in"><p class="text-xs uppercase mb-2">Transfer Manual ke:</p><p class="text-sm font-mono whitespace-pre-wrap">${resData.payment_info}</p></div>`;
-                    }
-                    startTimer(3600);
-                    startCheckingStatus(resData.order_id);
+                    if(d.qr_image) cont.innerHTML = `<img src="${d.qr_image}" class="w-64 h-64 mx-auto rounded-xl border-4 border-black mb-2 shadow-xl animate-fade-in">`;
+                    else cont.innerHTML = `<div class="bg-blue-50 p-6 rounded-xl border-2 border-dashed border-blue-300 text-blue-800">${d.payment_info}</div>`;
+                    startTimer(3600); startCheckingStatus(d.order_id);
                 }
-            } catch(e) { alert("Gagal koneksi server"); btn.disabled = false; btn.innerText = "BELI SEKARANG"; }
+            } catch(e) { alert("Gagal"); btn.disabled = false; btn.innerText = "BELI SEKARANG"; }
         }
 
         function startTimer(duration) {
