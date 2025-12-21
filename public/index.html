@@ -29,25 +29,24 @@
             <p class="text-xs text-gray-400 font-medium">Secure Payment Gateway</p>
         </div>
 
-        <div id="alertBox" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded text-xs animate-fade-in"><p id="alertMsg"></p></div>
-
         <div id="step1" class="animate-fade-in">
             <div class="space-y-4">
+                
                 <div>
                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Produk</label>
                     <input type="text" id="productName" class="w-full mt-1 p-3 bg-gray-50 border rounded-xl text-sm font-semibold text-gray-700 outline-none" readonly>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="customerWa" placeholder="WhatsApp (Opsional)" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500 transition">
-                    <input type="email" id="customerEmail" placeholder="Email (Wajib)" class="p-3 border border-blue-100 rounded-xl text-sm outline-none focus:border-blue-500 transition">
-                </div>
+                
                 <div>
                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Bayar (Rp)</label>
                     <input type="number" id="price" class="w-full mt-1 p-3 bg-blue-50 border border-blue-200 rounded-xl font-mono font-bold text-lg text-blue-700 outline-none" readonly>
                 </div>
 
+                <input type="hidden" id="customerWa">
+                <input type="hidden" id="customerEmail">
+
                 <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Pilih Metode</label>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Metode Pembayaran</label>
                     <input type="hidden" id="paymentMethod" value="qris">
                     <div class="space-y-2">
                         <div onclick="selectMethod('qris')" id="card-qris" class="payment-card selected flex items-center p-3 rounded-xl">
@@ -106,15 +105,13 @@
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             
-            // 1. Tangkap Link & ID
+            // 1. SETUP UMUM
             returnUrl = params.get('return') || params.get('callback') || document.referrer || "";
             refId = params.get('ref_id') || "";
-
-            // 2. Setup Tampilan
             const storeName = decodeURIComponent(params.get('store') || "Wago Store");
             document.getElementById('storeName').innerText = storeName;
 
-            // 3. Auto Logo
+            // 2. AUTO LOGO
             let logoSrc = params.get('logo') || ""; 
             if (!logoSrc && returnUrl) {
                 try {
@@ -123,25 +120,29 @@
                     logoSrc = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
                 } catch(e) {}
             }
-
             if (logoSrc) {
                 document.getElementById('storeLogo').src = logoSrc;
                 document.getElementById('logoContainer').classList.remove('hidden');
                 document.getElementById('defaultIcon').classList.add('hidden');
             }
-
             if(storeName && storeName !== "Wago Store") {
                 document.getElementById('btnBackStore').innerText = "Kembali ke " + storeName;
             }
 
-            // 4. Auto Fill
+            // 3. AUTO FILL (DATA TAMPAK)
             document.getElementById('productName').value = decodeURIComponent(params.get('prod')) || "Produk";
             const price = parseInt(params.get('price')) || 1000;
             document.getElementById('price').value = price;
             
-            if(params.get('wa')) document.getElementById('customerWa').value = params.get('wa');
-            if(params.get('email')) document.getElementById('customerEmail').value = params.get('email');
+            // 4. AUTO FILL (DATA TERSEMBUNYI)
+            // Kalau di URL tidak ada email, kita kasih default 'guest' agar sistem tidak error
+            const urlWa = params.get('wa') || "-";
+            const urlEmail = params.get('email') || "guest@transaction.com";
             
+            document.getElementById('customerWa').value = urlWa;
+            document.getElementById('customerEmail').value = urlEmail;
+
+            // Tampilkan Bank jika harga >= 100rb
             if(price >= 100000) document.getElementById('bankOptions').classList.remove('hidden');
         };
 
@@ -167,16 +168,14 @@
             const data = {
                 product_name: document.getElementById('productName').value,
                 price: document.getElementById('price').value,
-                // WA JADI OPSIONAL (Kalau kosong, isi strip)
-                customer_contact: document.getElementById('customerWa').value || "-", 
+                customer_contact: document.getElementById('customerWa').value,
                 customer_email: document.getElementById('customerEmail').value,
                 method: document.getElementById('paymentMethod').value,
                 ref_id: refId
             };
 
-            // HANYA CEK EMAIL
-            if(!data.customer_email) return alert("Mohon isi Email untuk pengiriman bukti bayar!");
-            
+            // TIDAK ADA VALIDASI ALERT (Karena user tidak bisa ngisi)
+            // Langsung proses
             btn.innerText = "Memproses...";
             btn.disabled = true;
 
@@ -187,7 +186,6 @@
                 if(d.status === 'success') {
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.remove('hidden');
-                    
                     document.getElementById('totalPayDisplay').innerText = "Rp " + d.total_pay.toLocaleString('id-ID');
                     document.getElementById('orderIdDisplay').innerText = d.order_id;
                     
@@ -197,12 +195,11 @@
                     } else {
                         cont.innerHTML = `<div class="bg-blue-50 p-6 rounded-xl border-2 border-dashed border-blue-300 text-blue-800">${d.payment_info}</div>`;
                     }
-                    
                     startTimer(3600); 
                     startCheckingStatus(d.order_id);
                 }
             } catch(e) { 
-                alert("Gagal koneksi. Coba lagi."); 
+                alert("Gagal koneksi server."); 
                 btn.disabled = false; 
                 btn.innerText = "BAYAR SEKARANG"; 
             }
