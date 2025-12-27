@@ -19,8 +19,8 @@
             color: #334155; overflow: hidden; height: 100dvh; width: 100vw; margin: 0;
         }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-        .fade-enter { animation: fadeEnter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes fadeEnter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes fadeEnter { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .fade-exit { animation: fadeExit 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes fadeExit { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95) translateY(20px); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -29,13 +29,23 @@
                         linear-gradient(-45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%);
             background-size: 16px 32px; background-position: 0 100%; height: 16px;
         }
+
+        /* --- NEW ANIMATIONS --- */
+        /* Checkmark Draw Animation */
+        .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+        .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: #10b981; fill: none; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards; }
+        @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+        
+        /* Success Container Pop */
+        .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
+        @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="flex items-center justify-center">
 
     <div class="hidden sm:block absolute w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <div id="main-container" class="w-full h-[100dvh] sm:max-w-[480px] sm:h-[90vh] glass-panel sm:rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col sm:border sm:border-white/40 z-10 transition-all duration-300">
+    <div id="main-container" class="w-full h-[100dvh] sm:max-w-[480px] sm:h-[90vh] glass-panel sm:rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col sm:border sm:border-white/40 z-10 transition-all duration-500">
         
         <header class="flex-none px-6 py-4 bg-white/80 border-b border-slate-100 flex items-center justify-between backdrop-blur-xl z-20">
             <div class="flex items-center gap-3">
@@ -50,7 +60,7 @@
                     </div>
                 </div>
             </div>
-            <button onclick="confirmCancel()" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 border border-slate-100 shadow-sm active:scale-95">
+            <button id="cancel-btn" onclick="confirmCancel()" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 border border-slate-100 shadow-sm active:scale-95 transition-all">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </header>
@@ -58,7 +68,7 @@
         <main id="app-content" class="flex-1 overflow-y-auto no-scrollbar relative bg-gradient-to-b from-slate-50/50 to-white/0 p-4">
             </main>
 
-        <footer id="action-area" class="flex-none p-6 bg-white border-t border-slate-100 z-20 shadow-lg">
+        <footer id="action-area" class="flex-none p-6 bg-white border-t border-slate-100 z-20 shadow-lg transition-all duration-300">
             </footer>
     </div>
 
@@ -84,30 +94,17 @@
     <input type="hidden" id="paymentMethod" value="qris">
 
     <script>
-        // --- VARIABLE STATE UTAMA ---
-        let state = { 
-            step: 1, 
-            totalAmount: 0, 
-            timerInterval: null, 
-            returnUrl: "", 
-            notifyUrl: "", // Ini variabel baru untuk Webhook Dinamis
-            productName: "Produk", 
-            timeoutMinutes: 60, 
-            refId: "" 
-        };
+        let state = { step: 1, totalAmount: 0, timerInterval: null, returnUrl: "", notifyUrl: "", productName: "Produk", timeoutMinutes: 60, refId: "" };
 
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
-            
-            // Tangkap Data URL
             state.returnUrl = params.get('return') || document.referrer || "";
-            state.notifyUrl = params.get('notify') || ""; // Menangkap Webhook URL
+            state.notifyUrl = params.get('notify') || "";
             state.productName = decodeURIComponent(params.get('prod') || "Produk");
             state.totalAmount = parseInt(params.get('price')) || 1000;
             state.refId = params.get('ref_id') || "";
             if(params.get('time')) state.timeoutMinutes = parseInt(params.get('time'));
             
-            // Auto-fill hidden inputs
             document.getElementById('productName').value = state.productName;
             document.getElementById('price').value = state.totalAmount;
             document.getElementById('customerWa').value = params.get('wa') || "-";
@@ -153,7 +150,6 @@
             btn.innerHTML = `<span class="flex items-center gap-2 justify-center"><svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> MEMPROSES...</span>`;
             
             try {
-                // --- KIRIM DATA KE BACKEND (TERMASUK NOTIFY URL) ---
                 const data = { 
                     product_name: state.productName, 
                     price: state.totalAmount, 
@@ -161,12 +157,10 @@
                     customer_email: document.getElementById('customerEmail').value, 
                     method: 'qris', 
                     ref_id: state.refId,
-                    notify_url: state.notifyUrl // <--- INI KUNCINYA
+                    notify_url: state.notifyUrl
                 };
-                
                 const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                 const d = await res.json();
-                
                 if(d.status === 'success') {
                     state.totalAmount = d.total_pay;
                     renderStep2(d);
@@ -230,31 +224,129 @@
                     const d = await res.json();
                     if(d.status === 'PAID') { 
                         clearInterval(checker); 
-                        clearInterval(state.timerInterval); 
-                        renderStep3(); 
+                        clearInterval(state.timerInterval);
+                        // --- TRANSISI LOADING BARU ---
+                        renderLoadingTransition(); 
                     }
                 } catch(e){}
             }, 3000);
         }
 
+        // --- FUNGSI BARU: TRANSISI LOADING ---
+        function renderLoadingTransition() {
+            const content = document.getElementById('app-content');
+            const actionArea = document.getElementById('action-area');
+            
+            // Sembunyikan tombol batal dan tombol cancel di header agar user menunggu
+            actionArea.innerHTML = ''; 
+            document.getElementById('cancel-btn').classList.add('hidden');
+
+            content.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center fade-enter text-center">
+                    <div class="relative w-24 h-24 mb-6">
+                        <svg class="animate-spin w-full h-full text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-emerald-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Memverifikasi Pembayaran</h3>
+                    <p class="text-sm text-slate-500">Mohon tunggu sebentar, jangan tutup halaman ini...</p>
+                </div>`;
+
+            // Tunggu 2 detik sebelum menampilkan layar sukses akhir
+            setTimeout(() => {
+                renderStep3();
+            }, 2000);
+        }
+
         function renderStep3() {
             state.step = 3;
             const content = document.getElementById('app-content');
+            const now = new Date();
+            const actionArea = document.getElementById('action-area');
+
+            // Tampilkan kembali footer
+            actionArea.classList.remove('hidden');
+
             content.innerHTML = `
-                <div class="p-6 fade-enter flex flex-col items-center justify-center h-full">
-                    <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 text-emerald-500 text-5xl animate-bounce">✓</div>
-                    <h2 class="text-2xl font-extrabold text-slate-900">PEMBAYARAN LUNAS!</h2>
-                    <p class="text-sm text-slate-400 mt-2 text-center">Terima kasih, pembayaran berhasil diverifikasi.</p>
+                <div class="p-6 success-pop h-full flex flex-col items-center justify-center">
+                    <div class="w-full bg-white shadow-2xl shadow-emerald-200/50 rounded-t-[2rem] overflow-hidden relative border-x border-t border-white/80">
+                        <div class="h-3 bg-gradient-to-r from-emerald-400 to-emerald-500"></div>
+                        <div class="p-8 text-center border-b border-dashed border-slate-200 bg-white relative z-10 pb-10">
+                            <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm relative">
+                                <svg class="w-16 h-16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">PEMBAYARAN LUNAS!</h2>
+                            <p class="text-sm text-slate-500 mt-3 px-4 leading-relaxed">Terima kasih, pembayaran Anda telah berhasil kami verifikasi secara otomatis.</p>
+                        </div>
+                        <div class="p-6 bg-slate-50/80 relative">
+                            <div class="flex justify-between items-center mb-5">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Paid</span>
+                                <span class="text-2xl font-extrabold text-slate-900">Rp ${state.totalAmount.toLocaleString('id-ID')}</span>
+                            </div>
+                            <div class="space-y-3 pt-4 border-t border-slate-200/60 text-sm text-slate-600">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Method</span>
+                                    <span class="font-bold text-slate-800 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> QRIS Otomatis
+                                    </span>
+                                </div>
+                                <div class="flex justify-between"><span>Date</span><span class="font-bold text-slate-800">${now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+                                <div class="flex justify-between items-center pt-1"><span>Ref. ID</span><span class="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">${state.refId || '-'}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full receipt-bottom opacity-100 z-10 relative mt-[-1px]"></div>
                 </div>`;
-            document.getElementById('action-area').innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-lg uppercase text-sm">Kembali ke Beranda</button>`;
+            
+            let backBtnText = state.storeName && state.storeName !== "Wago Store" ? "Kembali ke " + state.storeName : "Kembali ke Beranda";
+            actionArea.innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-sm tracking-wide active:scale-[0.98]">${backBtnText}</button>`;
         }
 
+        // Modal Helpers
         function confirmCancel() {
             if(state.step === 1) { window.location.href = state.returnUrl; return; }
-            document.getElementById('custom-modal').classList.remove('opacity-0', 'pointer-events-none');
+            showConfirm("Batalkan Transaksi?", "Sesi pembayaran ini akan dihentikan.", () => {
+                const container = document.getElementById('main-container');
+                container.classList.add('fade-exit');
+                setTimeout(() => location.reload(), 350);
+            });
         }
-        function closeModal() { document.getElementById('custom-modal').classList.add('opacity-0', 'pointer-events-none'); }
-        document.getElementById('modal-confirm-btn').onclick = () => location.reload();
+
+        function showConfirm(title, msg, onConfirm) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = msg;
+            document.getElementById('modal-actions').classList.remove('hidden');
+            document.getElementById('modal-alert-action').classList.add('hidden');
+            document.getElementById('modal-confirm-btn').onclick = onConfirm;
+            openModal();
+        }
+
+        function showAlert(title, msg) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = msg;
+            document.getElementById('modal-actions').classList.add('hidden');
+            document.getElementById('modal-alert-action').classList.remove('hidden');
+            openModal();
+        }
+
+        function openModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.remove('scale-90');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.add('scale-90');
+        }
 
         function showToast(message) {
             const existingToast = document.getElementById('custom-toast');
@@ -266,14 +358,6 @@
             document.body.appendChild(toast);
             requestAnimationFrame(() => { toast.classList.remove('translate-y-[-100px]', 'opacity-0'); });
             setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
-        }
-
-        function showAlert(title, msg) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-msg').innerText = msg;
-            document.getElementById('modal-actions').classList.add('hidden');
-            document.getElementById('modal-alert-action').classList.remove('hidden');
-            document.getElementById('custom-modal').classList.remove('opacity-0', 'pointer-events-none');
         }
 
         window.copyToClipboard = (text, msg = 'Teks disalin!') => {
