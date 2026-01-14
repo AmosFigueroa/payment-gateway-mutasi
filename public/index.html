@@ -30,7 +30,7 @@
             background-size: 16px 32px; background-position: 0 100%; height: 16px;
         }
 
-        /* --- NEW ANIMATIONS --- */
+        /* --- ANIMATIONS --- */
         /* Checkmark Draw Animation */
         .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
         .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: #10b981; fill: none; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards; }
@@ -94,7 +94,25 @@
     <input type="hidden" id="paymentMethod" value="qris">
 
     <script>
-        let state = { step: 1, totalAmount: 0, timerInterval: null, returnUrl: "", notifyUrl: "", productName: "Produk", timeoutMinutes: 60, refId: "" };
+        let state = { 
+            step: 1, 
+            totalAmount: 0, 
+            timerInterval: null, 
+            returnUrl: "", 
+            notifyUrl: "", 
+            selectedMethod: 'qris', // Default Method
+            productName: "Produk", 
+            timeoutMinutes: 60, 
+            refId: "" 
+        };
+
+        // Data Metode Pembayaran
+        const paymentMethodsData = [
+            { id: 'qris', name: 'QRIS (Otomatis)', desc: 'Scan via GoPay, OVO, Dana', icon: '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg>' },
+            { id: 'bca', name: 'Transfer Bank', desc: 'BCA (Cek Manual)', icon: '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>' }
+        ];
+
+        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
@@ -115,35 +133,67 @@
 
         function renderStep1() {
             const content = document.getElementById('app-content');
-            content.innerHTML = `
-                <div class="px-2 py-4 fade-enter">
-                    <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">ORDER SUMMARY</h2>
+            const actionArea = document.getElementById('action-area');
+            
+            // --- UPDATE PENTING: LIMIT TURUN JADI 50.000 ---
+            const minTransfer = 50000; 
+
+            // Filter Metode Pembayaran
+            const availableMethods = paymentMethodsData.filter(m => {
+                // Jika metode BCA & harga < 50k, sembunyikan
+                if (m.id === 'bca' && state.totalAmount < minTransfer) return false;
+                return true;
+            });
+
+            // Jika metode yang dipilih sebelumnya tidak tersedia, reset ke metode pertama (QRIS)
+            if (!availableMethods.find(m => m.id === state.selectedMethod)) {
+                state.selectedMethod = availableMethods[0].id;
+            }
+
+            const methodsHtml = availableMethods.map(method => `
+                <div onclick="selectMethod('${method.id}')" 
+                     class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 mb-3
+                     ${state.selectedMethod === method.id ? 'bg-slate-800 border-slate-800 shadow-xl shadow-slate-200 ring-1 ring-slate-800 text-white scale-[1.01]' : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md'}">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 border ${state.selectedMethod === method.id ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:bg-white'}">${method.icon}</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm ${state.selectedMethod === method.id ? 'text-white' : 'text-slate-700'}">${method.name}</h4>
+                            <p class="text-xs mt-0.5 ${state.selectedMethod === method.id ? 'text-slate-400' : 'text-slate-500'}">${method.desc}</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${state.selectedMethod === method.id ? 'border-emerald-400' : 'border-slate-300 group-hover:border-slate-400'}">
+                            ${state.selectedMethod === method.id ? '<div class="w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_15px_rgba(52,211,153,0.8)]"></div>' : ''}
+                        </div>
                     </div>
-                    <div class="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-100 mb-6">
-                        <div class="flex gap-4 py-2">
-                            <div class="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-xl border border-slate-100">📦</div>
-                            <div class="flex-1 min-w-0 flex flex-col justify-center">
-                                <h3 class="font-bold text-slate-800 truncate text-sm">${state.productName}</h3>
-                                <p class="text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded-md w-fit mt-1">One-time Payment</p>
+                </div>`).join('');
+
+            content.innerHTML = `
+                <div class="px-2 py-4 fade-enter pb-10">
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3 px-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Order Summary</h2></div>
+                        <div class="bg-white/80 backdrop-blur-md rounded-[1.5rem] p-5 shadow-sm border border-white">
+                             <div class="flex gap-4 py-2">
+                                <div class="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-xl shadow-sm border border-slate-100">📦</div>
+                                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                    <h3 class="font-bold text-slate-800 truncate leading-tight mb-1 text-sm">${state.productName}</h3>
+                                    <p class="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded-md border border-slate-200 w-fit">One-time Payment</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-dashed border-slate-200 flex justify-between items-end">
+                                <div><p class="text-slate-400 text-[10px] font-medium mb-1">Total Payment</p><span class="text-xl font-extrabold text-slate-900 tracking-tight">${formatRupiah(state.totalAmount)}</span></div>
                             </div>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-dashed border-slate-200">
-                            <p class="text-slate-400 text-[10px] font-medium mb-1">Total Bayar</p>
-                            <span class="text-2xl font-extrabold text-slate-900">Rp ${state.totalAmount.toLocaleString('id-ID')}</span>
-                        </div>
                     </div>
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-1">PILIH METODE</h2>
-                    <div class="p-4 rounded-2xl border bg-slate-800 text-white flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-700">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z" stroke-width="2"/></svg>
-                        </div>
-                        <div class="flex-1 text-sm font-bold">QRIS (Otomatis)</div>
-                        <div class="w-4 h-4 bg-emerald-400 rounded-full flex items-center justify-center"><div class="w-1.5 h-1.5 bg-white rounded-full"></div></div>
-                    </div>
+                    <div><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-1">Select Payment Method</h2>${methodsHtml}</div>
                 </div>`;
-            document.getElementById('action-area').innerHTML = `<button onclick="processCheckout()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-sm uppercase tracking-wide">BAYAR SEKARANG</button>`;
+            
+            actionArea.innerHTML = `
+                <button onclick="processCheckout()" class="w-full relative overflow-hidden bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] group ring-1 ring-slate-900">
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    <span class="relative flex items-center justify-center gap-2 text-sm uppercase tracking-wide">Bayar Sekarang <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></span>
+                </button>`;
         }
+
+        window.selectMethod = (id) => { state.selectedMethod = id; renderStep1(); };
 
         async function processCheckout() {
             const btn = document.querySelector('#action-area button');
@@ -155,7 +205,7 @@
                     price: state.totalAmount, 
                     customer_contact: document.getElementById('customerWa').value, 
                     customer_email: document.getElementById('customerEmail').value, 
-                    method: 'qris', 
+                    method: state.selectedMethod, // Gunakan metode yang dipilih user
                     ref_id: state.refId,
                     notify_url: state.notifyUrl
                 };
@@ -177,17 +227,38 @@
         function renderStep2(apiData) {
             state.step = 2;
             const content = document.getElementById('app-content');
+            const actionArea = document.getElementById('action-area');
+            
+            let paymentDisplay = "";
+            
+            // Logic Tampilan QRIS vs Bank
+            if (state.selectedMethod === 'qris' && apiData.qr_image) {
+                paymentDisplay = `
+                    <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[280px]">
+                        <div class="bg-slate-900 text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4">SCAN QRIS</div>
+                        <img src="${apiData.qr_image}" class="w-full rounded-xl border-2 border-slate-50 shadow-sm">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 mx-auto mt-4 opacity-90">
+                    </div>`;
+            } else {
+                // Tampilan Bank Transfer
+                paymentDisplay = `
+                    <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[320px]">
+                        <div class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4 inline-block">BANK TRANSFER</div>
+                        <div class="bg-blue-50/50 rounded-xl p-5 border border-blue-100 text-left">
+                            <p class="text-sm font-medium text-slate-700 whitespace-pre-wrap leading-relaxed">${apiData.payment_info}</p>
+                        </div>
+                    </div>`;
+            }
+
             content.innerHTML = `
                 <div class="px-4 py-6 text-center fade-enter flex flex-col items-center">
                     <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold mb-6 border border-red-100 animate-pulse">
                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg>
                         SISA WAKTU <span id="timer" class="font-mono text-xs ml-1">--:--</span>
                     </div>
-                    <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[280px]">
-                        <div class="bg-slate-900 text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4">SCAN QRIS</div>
-                        <img src="${apiData.qr_image}" class="w-full rounded-xl border-2 border-slate-50 shadow-sm">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 mx-auto mt-4 opacity-90">
-                    </div>
+                    
+                    ${paymentDisplay}
+                    
                     <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p>
                     <div class="inline-flex items-center justify-center gap-2 cursor-pointer group hover:bg-slate-50/50 px-4 py-2 rounded-2xl transition-all" onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')">
                         <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2>
@@ -196,7 +267,7 @@
                     <div class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-400 mt-4">ORDER ID: ${apiData.order_id}</div>
                 </div>`;
             
-            document.getElementById('action-area').innerHTML = `<button onclick="confirmCancel()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
+            actionArea.innerHTML = `<button onclick="confirmCancel()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
             
             startTimer(state.timeoutMinutes * 60);
             startCheckingStatus(apiData.order_id);
@@ -225,19 +296,16 @@
                     if(d.status === 'PAID') { 
                         clearInterval(checker); 
                         clearInterval(state.timerInterval);
-                        // --- TRANSISI LOADING BARU ---
                         renderLoadingTransition(); 
                     }
                 } catch(e){}
             }, 3000);
         }
 
-        // --- FUNGSI BARU: TRANSISI LOADING ---
         function renderLoadingTransition() {
             const content = document.getElementById('app-content');
             const actionArea = document.getElementById('action-area');
             
-            // Sembunyikan tombol batal dan tombol cancel di header agar user menunggu
             actionArea.innerHTML = ''; 
             document.getElementById('cancel-btn').classList.add('hidden');
 
@@ -248,18 +316,12 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <svg class="w-8 h-8 text-emerald-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
                     </div>
                     <h3 class="text-xl font-bold text-slate-800 mb-2">Memverifikasi Pembayaran</h3>
-                    <p class="text-sm text-slate-500">Mohon tunggu sebentar, jangan tutup halaman ini...</p>
+                    <p class="text-sm text-slate-500">Mohon tunggu sebentar...</p>
                 </div>`;
 
-            // Tunggu 2 detik sebelum menampilkan layar sukses akhir
-            setTimeout(() => {
-                renderStep3();
-            }, 2000);
+            setTimeout(() => { renderStep3(); }, 2000);
         }
 
         function renderStep3() {
@@ -267,8 +329,8 @@
             const content = document.getElementById('app-content');
             const now = new Date();
             const actionArea = document.getElementById('action-area');
+            const methodName = state.selectedMethod === 'qris' ? 'QRIS Otomatis' : 'Bank Transfer';
 
-            // Tampilkan kembali footer
             actionArea.classList.remove('hidden');
 
             content.innerHTML = `
@@ -294,7 +356,7 @@
                                 <div class="flex justify-between items-center">
                                     <span class="font-medium">Method</span>
                                     <span class="font-bold text-slate-800 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> QRIS Otomatis
+                                        <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ${methodName}
                                     </span>
                                 </div>
                                 <div class="flex justify-between"><span>Date</span><span class="font-bold text-slate-800">${now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
