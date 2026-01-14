@@ -108,12 +108,15 @@
 
         const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
-        // DATA BANK DENGAN LOGO
+        // --- UPDATE LOGO BANK DI SINI ---
         const bankData = [
             { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
-            { id: 'bni', name: 'Bank BNI', logo: 'https://upload.wikimedia.org/wikipedia/id/thumb/5/55/BNI_logo.svg/1200px-BNI_logo.svg.png' },
-            { id: 'seabank', name: 'SeaBank', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/SeaBank_logo.svg/1200px-SeaBank_logo.svg.png' },
-            { id: 'jago', name: 'Bank Jago', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Bank_Jago_logo.svg/2560px-Bank_Jago_logo.svg.png' }
+            // Logo BNI Baru
+            { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
+            // Logo SeaBank Baru
+            { id: 'seabank', name: 'SeaBank', logo: 'https://i.ibb.co.com/wr7QqTcx/image.png' },
+            // Logo Bank Jago Baru
+            { id: 'jago', name: 'Bank Jago', logo: 'https://i.ibb.co.com/tMdwhc2v/logo-color-3719629472.png' }
         ];
 
         window.onload = function() {
