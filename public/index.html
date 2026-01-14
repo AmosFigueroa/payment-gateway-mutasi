@@ -31,14 +31,17 @@
         }
 
         /* --- ANIMATIONS --- */
-        /* Checkmark Draw Animation */
         .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
         .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: #10b981; fill: none; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards; }
         @keyframes stroke { 100% { stroke-dashoffset: 0; } }
-        
-        /* Success Container Pop */
         .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
         @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* Dropdown Styling */
+        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+        .select-wrapper::after {
+            content: "▼"; font-size: 0.8rem; color: #64748b; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); pointer-events: none;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -100,17 +103,11 @@
             timerInterval: null, 
             returnUrl: "", 
             notifyUrl: "", 
-            selectedMethod: 'qris', // Default Method
+            selectedMethod: 'qris', // Default: QRIS
             productName: "Produk", 
             timeoutMinutes: 60, 
             refId: "" 
         };
-
-        // Data Metode Pembayaran
-        const paymentMethodsData = [
-            { id: 'qris', name: 'QRIS (Otomatis)', desc: 'Scan via GoPay, OVO, Dana', icon: '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg>' },
-            { id: 'bca', name: 'Transfer Bank', desc: 'BCA (Cek Manual)', icon: '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>' }
-        ];
 
         const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
@@ -131,40 +128,54 @@
             renderStep1();
         };
 
+        // --- FUNGSI PILIH METODE ---
+        window.selectQris = () => {
+            state.selectedMethod = 'qris';
+            document.getElementById('qris-card').classList.add('bg-slate-800', 'text-white', 'ring-1', 'ring-slate-800', 'shadow-xl');
+            document.getElementById('qris-card').classList.remove('bg-white', 'text-slate-700', 'hover:border-slate-300');
+            
+            // Reset Dropdown Bank
+            const bankSelect = document.getElementById('bank-select');
+            if(bankSelect) {
+                bankSelect.value = ""; 
+                document.getElementById('bank-container').classList.remove('ring-2', 'ring-blue-500');
+            }
+        };
+
+        window.selectBank = (val) => {
+            if(!val) return;
+            state.selectedMethod = val; // Set method sesuai value bank (misal: 'bca')
+            
+            // Highlight Bank Container
+            document.getElementById('bank-container').classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+            
+            // Un-highlight QRIS
+            document.getElementById('qris-card').classList.remove('bg-slate-800', 'text-white', 'ring-1', 'ring-slate-800', 'shadow-xl');
+            document.getElementById('qris-card').classList.add('bg-white', 'text-slate-700', 'hover:border-slate-300');
+        };
+
         function renderStep1() {
             const content = document.getElementById('app-content');
             const actionArea = document.getElementById('action-area');
             
-            // --- UPDATE PENTING: LIMIT TURUN JADI 50.000 ---
+            // --- SETTING LIMIT TRANSFER DI SINI (50.000) ---
             const minTransfer = 50000; 
+            const showBank = state.totalAmount >= minTransfer;
 
-            // Filter Metode Pembayaran
-            const availableMethods = paymentMethodsData.filter(m => {
-                // Jika metode BCA & harga < 50k, sembunyikan
-                if (m.id === 'bca' && state.totalAmount < minTransfer) return false;
-                return true;
-            });
-
-            // Jika metode yang dipilih sebelumnya tidak tersedia, reset ke metode pertama (QRIS)
-            if (!availableMethods.find(m => m.id === state.selectedMethod)) {
-                state.selectedMethod = availableMethods[0].id;
+            let bankSectionHtml = "";
+            if (showBank) {
+                // RENDER DROPDOWN JIKA NOMINAL > 50.000
+                bankSectionHtml = `
+                    <div class="mt-4">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Atau Transfer Bank (Manual)</label>
+                        <div id="bank-container" class="relative select-wrapper transition-all duration-300 bg-white border border-slate-200 rounded-2xl p-1">
+                            <select id="bank-select" onchange="selectBank(this.value)" class="w-full p-3 bg-transparent font-semibold text-slate-700 focus:outline-none text-sm cursor-pointer">
+                                <option value="" selected disabled>Pilih Bank Tujuan...</option>
+                                <option value="bca">Bank BCA (Cek Manual)</option>
+                                </select>
+                        </div>
+                    </div>`;
             }
-
-            const methodsHtml = availableMethods.map(method => `
-                <div onclick="selectMethod('${method.id}')" 
-                     class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 mb-3
-                     ${state.selectedMethod === method.id ? 'bg-slate-800 border-slate-800 shadow-xl shadow-slate-200 ring-1 ring-slate-800 text-white scale-[1.01]' : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md'}">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 border ${state.selectedMethod === method.id ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:bg-white'}">${method.icon}</div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-sm ${state.selectedMethod === method.id ? 'text-white' : 'text-slate-700'}">${method.name}</h4>
-                            <p class="text-xs mt-0.5 ${state.selectedMethod === method.id ? 'text-slate-400' : 'text-slate-500'}">${method.desc}</p>
-                        </div>
-                        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${state.selectedMethod === method.id ? 'border-emerald-400' : 'border-slate-300 group-hover:border-slate-400'}">
-                            ${state.selectedMethod === method.id ? '<div class="w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_15px_rgba(52,211,153,0.8)]"></div>' : ''}
-                        </div>
-                    </div>
-                </div>`).join('');
 
             content.innerHTML = `
                 <div class="px-2 py-4 fade-enter pb-10">
@@ -183,17 +194,33 @@
                             </div>
                         </div>
                     </div>
-                    <div><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-1">Select Payment Method</h2>${methodsHtml}</div>
+
+                    <div>
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Metode Pembayaran Utama</h2>
+                        
+                        <div id="qris-card" onclick="selectQris()" 
+                             class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-1 ring-slate-800 shadow-xl">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-700 border border-slate-600">
+                                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-sm">QRIS (Otomatis)</h4>
+                                    <p class="text-xs mt-0.5 opacity-80">Scan via GoPay, OVO, Dana, dll</p>
+                                </div>
+                                <div class="w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
+                            </div>
+                        </div>
+
+                        ${bankSectionHtml}
+                    </div>
                 </div>`;
             
             actionArea.innerHTML = `
                 <button onclick="processCheckout()" class="w-full relative overflow-hidden bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] group ring-1 ring-slate-900">
-                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                     <span class="relative flex items-center justify-center gap-2 text-sm uppercase tracking-wide">Bayar Sekarang <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></span>
                 </button>`;
         }
-
-        window.selectMethod = (id) => { state.selectedMethod = id; renderStep1(); };
 
         async function processCheckout() {
             const btn = document.querySelector('#action-area button');
@@ -205,7 +232,7 @@
                     price: state.totalAmount, 
                     customer_contact: document.getElementById('customerWa').value, 
                     customer_email: document.getElementById('customerEmail').value, 
-                    method: state.selectedMethod, // Gunakan metode yang dipilih user
+                    method: state.selectedMethod, 
                     ref_id: state.refId,
                     notify_url: state.notifyUrl
                 };
@@ -231,7 +258,6 @@
             
             let paymentDisplay = "";
             
-            // Logic Tampilan QRIS vs Bank
             if (state.selectedMethod === 'qris' && apiData.qr_image) {
                 paymentDisplay = `
                     <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[280px]">
@@ -240,7 +266,6 @@
                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 mx-auto mt-4 opacity-90">
                     </div>`;
             } else {
-                // Tampilan Bank Transfer
                 paymentDisplay = `
                     <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[320px]">
                         <div class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4 inline-block">BANK TRANSFER</div>
