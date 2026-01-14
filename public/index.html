@@ -30,17 +30,20 @@
             background-size: 16px 32px; background-position: 0 100%; height: 16px;
         }
 
-        /* --- ANIMATIONS --- */
+        /* Animations */
         .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
         .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: #10b981; fill: none; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards; }
         @keyframes stroke { 100% { stroke-dashoffset: 0; } }
         .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
         @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
-        /* Dropdown Styling */
-        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        .select-wrapper::after {
-            content: "▼"; font-size: 0.8rem; color: #64748b; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); pointer-events: none;
+        /* Custom Select Design */
+        .custom-select {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 1rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
         }
     </style>
 </head>
@@ -103,7 +106,7 @@
             timerInterval: null, 
             returnUrl: "", 
             notifyUrl: "", 
-            selectedMethod: 'qris', // Default: QRIS
+            selectedMethod: 'qris', 
             productName: "Produk", 
             timeoutMinutes: 60, 
             refId: "" 
@@ -128,51 +131,59 @@
             renderStep1();
         };
 
-        // --- FUNGSI PILIH METODE ---
         window.selectQris = () => {
             state.selectedMethod = 'qris';
-            document.getElementById('qris-card').classList.add('bg-slate-800', 'text-white', 'ring-1', 'ring-slate-800', 'shadow-xl');
-            document.getElementById('qris-card').classList.remove('bg-white', 'text-slate-700', 'hover:border-slate-300');
+            document.getElementById('qris-card').classList.add('bg-slate-800', 'text-white', 'ring-2', 'ring-slate-800', 'shadow-lg');
+            document.getElementById('qris-card').classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+            document.getElementById('qris-indicator').classList.remove('hidden');
             
-            // Reset Dropdown Bank
+            // Reset Bank
             const bankSelect = document.getElementById('bank-select');
             if(bankSelect) {
                 bankSelect.value = ""; 
-                document.getElementById('bank-container').classList.remove('ring-2', 'ring-blue-500');
+                document.getElementById('bank-container').classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'border-blue-500');
+                document.getElementById('bank-container').classList.add('bg-white', 'border-slate-200');
             }
         };
 
         window.selectBank = (val) => {
             if(!val) return;
-            state.selectedMethod = val; // Set method sesuai value bank (misal: 'bca')
+            state.selectedMethod = val; 
             
-            // Highlight Bank Container
-            document.getElementById('bank-container').classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+            // Highlight Bank
+            document.getElementById('bank-container').classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'border-blue-500');
+            document.getElementById('bank-container').classList.remove('bg-white', 'border-slate-200');
             
             // Un-highlight QRIS
-            document.getElementById('qris-card').classList.remove('bg-slate-800', 'text-white', 'ring-1', 'ring-slate-800', 'shadow-xl');
-            document.getElementById('qris-card').classList.add('bg-white', 'text-slate-700', 'hover:border-slate-300');
+            document.getElementById('qris-card').classList.remove('bg-slate-800', 'text-white', 'ring-2', 'ring-slate-800', 'shadow-lg');
+            document.getElementById('qris-card').classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+            document.getElementById('qris-indicator').classList.add('hidden');
         };
 
         function renderStep1() {
             const content = document.getElementById('app-content');
             const actionArea = document.getElementById('action-area');
-            
-            // --- SETTING LIMIT TRANSFER DI SINI (50.000) ---
             const minTransfer = 50000; 
             const showBank = state.totalAmount >= minTransfer;
 
+            // --- DATA BANK DI SINI HARUS SAMA DENGAN BACKEND ---
+            let bankOptionsHtml = `
+                <option value="bcava">Bank BCA (Cek Otomatis)</option>
+                <option value="seabank">SeaBank</option>
+                <option value="bni">Bank BNI</option>
+                <option value="jago">Bank Jago</option>
+            `;
+
             let bankSectionHtml = "";
             if (showBank) {
-                // RENDER DROPDOWN JIKA NOMINAL > 50.000
                 bankSectionHtml = `
-                    <div class="mt-4">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Atau Transfer Bank (Manual)</label>
-                        <div id="bank-container" class="relative select-wrapper transition-all duration-300 bg-white border border-slate-200 rounded-2xl p-1">
-                            <select id="bank-select" onchange="selectBank(this.value)" class="w-full p-3 bg-transparent font-semibold text-slate-700 focus:outline-none text-sm cursor-pointer">
+                    <div class="mt-5">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Atau Transfer Bank (Manual)</label>
+                        <div id="bank-container" class="relative transition-all duration-300 bg-white border border-slate-200 rounded-2xl">
+                            <select id="bank-select" onchange="selectBank(this.value)" class="custom-select w-full p-4 bg-transparent font-bold text-slate-700 focus:outline-none text-sm cursor-pointer rounded-2xl">
                                 <option value="" selected disabled>Pilih Bank Tujuan...</option>
-                                <option value="bca">Bank BCA (Cek Manual)</option>
-                                </select>
+                                ${bankOptionsHtml}
+                            </select>
                         </div>
                     </div>`;
             }
@@ -197,21 +208,19 @@
 
                     <div>
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Metode Pembayaran Utama</h2>
-                        
                         <div id="qris-card" onclick="selectQris()" 
-                             class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-1 ring-slate-800 shadow-xl">
+                             class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-lg">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-700 border border-slate-600">
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/10 border border-white/10">
                                     <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg>
                                 </div>
                                 <div class="flex-1">
                                     <h4 class="font-bold text-sm">QRIS (Otomatis)</h4>
                                     <p class="text-xs mt-0.5 opacity-80">Scan via GoPay, OVO, Dana, dll</p>
                                 </div>
-                                <div class="w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
+                                <div id="qris-indicator" class="w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800"></div>
                             </div>
                         </div>
-
                         ${bankSectionHtml}
                     </div>
                 </div>`;
