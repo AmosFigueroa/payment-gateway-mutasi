@@ -55,7 +55,10 @@ export default async function handler(req, res) {
   // DATA REKENING (Pastikan String QRIS Benar)
   const DATA_PAYMENT = {
     qris: "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204721053033605802ID5925WAGO SHOESPA CUCI SEPATU 6006SLEMAN61055529462070703A016304EFA8", 
-    bca: "1234567890 a.n Wago Payment", // Ganti dengan rek BCA asli jika ada
+    bcava: "70001085171592306 a.n Wago Payment", // Ganti dengan rek BCA asli jika ada
+    seabank: "901168080844 a.n Wago Payment",
+    bni: "1868174575 a.n Wago Payment",
+    jago: "100356111569 a.n Wago Payment",
   };
 
   try {
@@ -82,7 +85,7 @@ export default async function handler(req, res) {
     if (nominal < 1000) return res.status(400).json({ error: "Minimal Rp 1.000" });
     if (nominal > 1000000) return res.status(400).json({ error: "Maksimal Rp 1.000.000" });
     // Fitur Auto-Hide Bank di Frontend sudah ada, tapi validasi backend tetap perlu
-    if (nominal < 100000 && selectedMethod !== 'qris') return res.status(400).json({ error: "Transfer Bank minimal Rp 100.000" });
+   if (nominal < 50000 && selectedMethod !== 'qris') return res.status(400).json({ error: "Transfer Bank minimal Rp 50.000" });
 
     // 4. Hitung Total Bayar (Kode Unik)
     const uniqueCode = Math.floor(Math.random() * 99) + 1;
