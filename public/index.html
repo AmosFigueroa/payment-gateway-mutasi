@@ -35,7 +35,7 @@
         .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
         @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
-        /* Custom Dropdown Animation */
+        /* Dropdown Animation */
         .dropdown-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: top; }
         .dropdown-open { opacity: 1; transform: scaleY(1); max-height: 300px; }
         .dropdown-closed { opacity: 0; transform: scaleY(0.9); max-height: 0; pointer-events: none; }
@@ -91,9 +91,16 @@
     <input type="hidden" id="price">
     <input type="hidden" id="customerWa">
     <input type="hidden" id="customerEmail">
-    <input type="hidden" id="paymentMethod" value="qris">
 
     <script>
+        // --- DATA UTAMA ---
+        const bankData = [
+            { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
+            { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
+            { id: 'seabank', name: 'SeaBank', logo: 'https://i.ibb.co.com/wr7QqTcx/image.png' },
+            { id: 'jago', name: 'Bank Jago', logo: 'https://i.ibb.co.com/tMdwhc2v/logo-color-3719629472.png' }
+        ];
+
         let state = { 
             step: 1, 
             totalAmount: 0, 
@@ -107,17 +114,6 @@
         };
 
         const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
-
-        // --- UPDATE LOGO BANK DI SINI ---
-        const bankData = [
-            { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
-            // Logo BNI Baru
-            { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
-            // Logo SeaBank Baru
-            { id: 'seabank', name: 'SeaBank', logo: 'https://i.ibb.co.com/wr7QqTcx/image.png' },
-            // Logo Bank Jago Baru
-            { id: 'jago', name: 'Bank Jago', logo: 'https://i.ibb.co.com/tMdwhc2v/logo-color-3719629472.png' }
-        ];
 
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
@@ -136,18 +132,15 @@
             renderStep1();
         };
 
-        // --- INTERAKSI METODE PEMBAYARAN ---
+        // --- UI LOGIC ---
         window.toggleBankDropdown = () => {
             const dropdown = document.getElementById('bank-dropdown-list');
             const arrow = document.getElementById('bank-arrow');
-            
             if (dropdown.classList.contains('dropdown-closed')) {
-                dropdown.classList.remove('dropdown-closed');
-                dropdown.classList.add('dropdown-open');
+                dropdown.classList.remove('dropdown-closed'); dropdown.classList.add('dropdown-open');
                 arrow.style.transform = 'rotate(180deg)';
             } else {
-                dropdown.classList.add('dropdown-closed');
-                dropdown.classList.remove('dropdown-open');
+                dropdown.classList.add('dropdown-closed'); dropdown.classList.remove('dropdown-open');
                 arrow.style.transform = 'rotate(0deg)';
             }
         };
@@ -155,23 +148,16 @@
         window.selectQris = () => {
             state.selectedMethod = 'qris';
             updateSelectionUI();
-            
-            // Tutup dropdown bank jika terbuka
             document.getElementById('bank-dropdown-list')?.classList.add('dropdown-closed');
-            document.getElementById('bank-dropdown-list')?.classList.remove('dropdown-open');
         };
 
         window.selectBankOption = (id, name, logo) => {
             state.selectedMethod = id;
-            
-            // Update Tampilan Header Bank
             document.getElementById('bank-selected-logo').src = logo;
             document.getElementById('bank-selected-logo').classList.remove('hidden');
             document.getElementById('bank-default-icon').classList.add('hidden');
             document.getElementById('bank-selected-text').innerText = name;
             document.getElementById('bank-selected-desc').innerText = 'Metode Terpilih';
-            
-            // Tutup Dropdown
             toggleBankDropdown();
             updateSelectionUI();
         };
@@ -183,19 +169,13 @@
             const bankInd = document.getElementById('bank-indicator');
 
             if (state.selectedMethod === 'qris') {
-                // Active QRIS
                 qrisCard.className = "group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl";
                 qrisInd.className = "w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800";
-                
-                // Inactive Bank
                 bankCard.className = "relative p-4 rounded-2xl border transition-all duration-300 bg-white text-slate-700 border-slate-200 hover:border-slate-300 cursor-pointer";
                 bankInd.className = "w-5 h-5 rounded-full border-2 border-slate-300";
             } else {
-                // Inactive QRIS
                 qrisCard.className = "group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-white text-slate-700 border-slate-200 hover:border-slate-300";
                 qrisInd.className = "w-5 h-5 rounded-full border-2 border-slate-300";
-
-                // Active Bank
                 bankCard.className = "relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl cursor-pointer";
                 bankInd.className = "w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800";
             }
@@ -207,13 +187,9 @@
             const minTransfer = 50000; 
             const showBank = state.totalAmount >= minTransfer;
 
-            // Generate Bank Options HTML
             const bankListHtml = bankData.map(bank => `
-                <div onclick="selectBankOption('${bank.id}', '${bank.name}', '${bank.logo}')" 
-                     class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border-b border-slate-50 last:border-0">
-                    <div class="w-10 h-10 bg-white rounded-lg border border-slate-100 flex items-center justify-center p-1">
-                        <img src="${bank.logo}" class="w-full h-full object-contain">
-                    </div>
+                <div onclick="selectBankOption('${bank.id}', '${bank.name}', '${bank.logo}')" class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border-b border-slate-50 last:border-0">
+                    <div class="w-10 h-10 bg-white rounded-lg border border-slate-100 flex items-center justify-center p-1"><img src="${bank.logo}" class="w-full h-full object-contain"></div>
                     <span class="text-sm font-bold text-slate-700">${bank.name}</span>
                 </div>
             `).join('');
@@ -223,31 +199,23 @@
                 bankSectionHtml = `
                     <div class="mt-4 relative">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Transfer Bank</label>
-                        
                         <div id="bank-card-container" onclick="toggleBankDropdown()" class="relative p-4 rounded-2xl border transition-all duration-300 bg-white text-slate-700 border-slate-200 hover:border-slate-300 cursor-pointer">
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-white border border-slate-200 overflow-hidden">
                                     <svg id="bank-default-icon" class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
                                     <img id="bank-selected-logo" src="" class="w-full h-full object-contain hidden p-1">
                                 </div>
-                                
                                 <div class="flex-1">
                                     <h4 id="bank-selected-text" class="font-bold text-sm">Pilih Bank Transfer...</h4>
                                     <p id="bank-selected-desc" class="text-xs mt-0.5 opacity-80">Klik untuk melihat daftar bank</p>
                                 </div>
-                                
                                 <div class="flex items-center gap-3">
                                     <div id="bank-indicator" class="w-5 h-5 rounded-full border-2 border-slate-300"></div>
                                     <svg id="bank-arrow" class="w-4 h-4 transition-transform duration-300 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </div>
                         </div>
-
-                        <div id="bank-dropdown-list" class="dropdown-content dropdown-closed absolute w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-30 overflow-hidden">
-                            <div class="p-2 max-h-[250px] overflow-y-auto no-scrollbar">
-                                ${bankListHtml}
-                            </div>
-                        </div>
+                        <div id="bank-dropdown-list" class="dropdown-content dropdown-closed absolute w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-30 overflow-hidden"><div class="p-2 max-h-[250px] overflow-y-auto no-scrollbar">${bankListHtml}</div></div>
                     </div>`;
             }
 
@@ -268,68 +236,36 @@
                             </div>
                         </div>
                     </div>
-
                     <div>
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Metode Pembayaran</h2>
-                        
-                        <div id="qris-card" onclick="selectQris()" 
-                             class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl">
+                        <div id="qris-card" onclick="selectQris()" class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-700 border border-slate-600">
-                                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-sm">QRIS (Otomatis)</h4>
-                                    <p class="text-xs mt-0.5 opacity-80">Scan via GoPay, OVO, Dana, dll</p>
-                                </div>
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-700 border border-slate-600"><svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg></div>
+                                <div class="flex-1"><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-xs mt-0.5 opacity-80">Scan via GoPay, OVO, Dana, dll</p></div>
                                 <div id="qris-indicator" class="w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800"></div>
                             </div>
                         </div>
-
                         ${bankSectionHtml}
                     </div>
                 </div>`;
             
-            actionArea.innerHTML = `
-                <button onclick="processCheckout()" class="w-full relative overflow-hidden bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] group ring-1 ring-slate-900">
-                    <span class="relative flex items-center justify-center gap-2 text-sm uppercase tracking-wide">Bayar Sekarang <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></span>
-                </button>`;
+            actionArea.innerHTML = `<button onclick="processCheckout()" class="w-full relative overflow-hidden bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] group ring-1 ring-slate-900"><span class="relative flex items-center justify-center gap-2 text-sm uppercase tracking-wide">Bayar Sekarang <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></span></button>`;
         }
 
         async function processCheckout() {
             const btn = document.querySelector('#action-area button');
-            
-            // Validasi: Jika Bank belum dipilih tapi container bank aktif
             if(state.selectedMethod !== 'qris' && !['bcava', 'bni', 'seabank', 'jago'].includes(state.selectedMethod)) {
-                showToast("Silakan pilih Bank tujuan!");
-                return;
+                showToast("Silakan pilih Bank tujuan!"); return;
             }
-
             btn.innerHTML = `<span class="flex items-center gap-2 justify-center"><svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> MEMPROSES...</span>`;
             
             try {
-                const data = { 
-                    product_name: state.productName, 
-                    price: state.totalAmount, 
-                    customer_contact: document.getElementById('customerWa').value, 
-                    customer_email: document.getElementById('customerEmail').value, 
-                    method: state.selectedMethod, 
-                    ref_id: state.refId,
-                    notify_url: state.notifyUrl
-                };
+                const data = { product_name: state.productName, price: state.totalAmount, customer_contact: document.getElementById('customerWa').value, customer_email: document.getElementById('customerEmail').value, method: state.selectedMethod, ref_id: state.refId, notify_url: state.notifyUrl };
                 const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                 const d = await res.json();
-                if(d.status === 'success') {
-                    state.totalAmount = d.total_pay;
-                    renderStep2(d);
-                } else {
-                    showAlert("Gagal", d.error || "Gagal memproses pesanan.");
-                    renderStep1();
-                }
-            } catch(e) { 
-                showAlert("Koneksi Error", "Cek koneksi internet Anda.");
-                renderStep1();
-            }
+                if(d.status === 'success') { state.totalAmount = d.total_pay; renderStep2(d); } 
+                else { showAlert("Gagal", d.error || "Gagal memproses pesanan."); renderStep1(); }
+            } catch(e) { showAlert("Koneksi Error", "Cek koneksi internet Anda."); renderStep1(); }
         }
 
         function renderStep2(apiData) {
@@ -338,21 +274,57 @@
             const actionArea = document.getElementById('action-area');
             
             let paymentDisplay = "";
-            
-            if (state.selectedMethod === 'qris' && apiData.qr_image) {
+            let instructionText = "";
+
+            if (apiData.payment_details && apiData.payment_details.type === 'bank') {
+                // --- TAMPILAN BANK TRANSFER BARU ---
+                // Cari Logo Bank
+                const bankInfo = bankData.find(b => b.id === apiData.payment_details.bank_code) || { logo: '', name: 'Bank Transfer' };
+                
                 paymentDisplay = `
-                    <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[280px]">
+                    <div class="w-full max-w-[320px] space-y-4 mb-4">
+                        <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-left relative overflow-hidden">
+                           <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
+                               <div class="w-8 h-8 rounded-lg border border-slate-100 p-1 flex items-center justify-center"><img src="${bankInfo.logo}" class="w-full h-full object-contain"></div>
+                               <span class="font-bold text-slate-700 text-sm">${bankInfo.name}</span>
+                           </div>
+                           
+                           <div onclick="copyToClipboard('${apiData.payment_details.acc_no}', 'No. Rekening Disalin!')" class="group bg-slate-50 hover:bg-slate-100 p-4 rounded-2xl border border-slate-200 flex justify-between items-center cursor-pointer transition-colors mb-2 relative">
+                               <div>
+                                   <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">No. Rekening</p>
+                                   <p class="text-lg font-mono font-bold text-slate-800 tracking-widest">${apiData.payment_details.acc_no}</p>
+                               </div>
+                               <div class="text-slate-400 group-hover:text-blue-500 bg-white p-2 rounded-xl shadow-sm border border-slate-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
+                           </div>
+                           <p class="text-xs text-slate-500 font-medium pl-1">a.n <span class="font-bold text-slate-700">${apiData.payment_details.acc_name}</span></p>
+                        </div>
+
+                        <div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="group bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-center cursor-pointer hover:border-blue-200 transition-all relative">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Pembayaran</p>
+                            <div class="flex items-center justify-center gap-2 mb-2">
+                                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2>
+                                <svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <div class="inline-block bg-amber-50 text-amber-600 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-100">
+                                ⚠️ TRANSFER TEPAT SAMPAI 3 DIGIT TERAKHIR
+                            </div>
+                        </div>
+                    </div>`;
+                
+                instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
+
+            } else {
+                // --- TAMPILAN QRIS ---
+                paymentDisplay = `
+                    <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 mb-6 w-full max-w-[280px]">
                         <div class="bg-slate-900 text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4">SCAN QRIS</div>
                         <img src="${apiData.qr_image}" class="w-full rounded-xl border-2 border-slate-50 shadow-sm">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 mx-auto mt-4 opacity-90">
-                    </div>`;
-            } else {
-                paymentDisplay = `
-                    <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 mb-8 w-full max-w-[320px]">
-                        <div class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4 inline-block">TRANSFER BANK</div>
-                        <div class="bg-blue-50/50 rounded-xl p-5 border border-blue-100 text-left">
-                            <p class="text-sm font-medium text-slate-700 whitespace-pre-wrap leading-relaxed">${apiData.payment_info}</p>
-                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p>
+                    <div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="cursor-pointer group flex items-center gap-2">
+                         <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2>
+                         <svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     </div>`;
             }
 
@@ -364,13 +336,9 @@
                     </div>
                     
                     ${paymentDisplay}
-                    
-                    <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p>
-                    <div class="inline-flex items-center justify-center gap-2 cursor-pointer group hover:bg-slate-50/50 px-4 py-2 rounded-2xl transition-all" onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')">
-                        <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2>
-                        <svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-width="2"></path></svg>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-400 mt-4">ORDER ID: ${apiData.order_id}</div>
+                    ${instructionText}
+
+                    <div class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-400 mt-6">ORDER ID: ${apiData.order_id}</div>
                 </div>`;
             
             actionArea.innerHTML = `<button onclick="confirmCancel()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
@@ -379,6 +347,7 @@
             startCheckingStatus(apiData.order_id);
         }
 
+        // --- COMMON FUNCTIONS (Timer, Status, Modal, Toast) ---
         function startTimer(duration) {
             let timer = duration;
             state.timerInterval = setInterval(() => {
@@ -386,11 +355,7 @@
                 if(!display) return;
                 let m = parseInt(timer / 60, 10), s = parseInt(timer % 60, 10);
                 display.textContent = `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
-                if (--timer < 0) { 
-                    clearInterval(state.timerInterval); 
-                    showAlert("Waktu Habis", "Sesi pembayaran telah berakhir.");
-                    setTimeout(() => location.reload(), 2000);
-                }
+                if (--timer < 0) { clearInterval(state.timerInterval); showAlert("Waktu Habis", "Sesi pembayaran telah berakhir."); setTimeout(() => location.reload(), 2000); }
             }, 1000);
         }
 
@@ -399,34 +364,15 @@
                 try {
                     const res = await fetch('/api/status?order_id='+id);
                     const d = await res.json();
-                    if(d.status === 'PAID') { 
-                        clearInterval(checker); 
-                        clearInterval(state.timerInterval);
-                        renderLoadingTransition(); 
-                    }
+                    if(d.status === 'PAID') { clearInterval(checker); clearInterval(state.timerInterval); renderLoadingTransition(); }
                 } catch(e){}
             }, 3000);
         }
 
         function renderLoadingTransition() {
             const content = document.getElementById('app-content');
-            const actionArea = document.getElementById('action-area');
-            
-            actionArea.innerHTML = ''; 
-            document.getElementById('cancel-btn').classList.add('hidden');
-
-            content.innerHTML = `
-                <div class="h-full flex flex-col items-center justify-center fade-enter text-center">
-                    <div class="relative w-24 h-24 mb-6">
-                        <svg class="animate-spin w-full h-full text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-2">Memverifikasi Pembayaran</h3>
-                    <p class="text-sm text-slate-500">Mohon tunggu sebentar...</p>
-                </div>`;
-
+            document.getElementById('action-area').innerHTML = ''; document.getElementById('cancel-btn').classList.add('hidden');
+            content.innerHTML = `<div class="h-full flex flex-col items-center justify-center fade-enter text-center"><div class="relative w-24 h-24 mb-6"><svg class="animate-spin w-full h-full text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div><h3 class="text-xl font-bold text-slate-800 mb-2">Memverifikasi Pembayaran</h3><p class="text-sm text-slate-500">Mohon tunggu sebentar...</p></div>`;
             setTimeout(() => { renderStep3(); }, 2000);
         }
 
@@ -436,7 +382,6 @@
             const now = new Date();
             const actionArea = document.getElementById('action-area');
             const methodName = state.selectedMethod === 'qris' ? 'QRIS Otomatis' : 'Bank Transfer';
-
             actionArea.classList.remove('hidden');
 
             content.innerHTML = `
@@ -445,26 +390,15 @@
                         <div class="h-3 bg-gradient-to-r from-emerald-400 to-emerald-500"></div>
                         <div class="p-8 text-center border-b border-dashed border-slate-200 bg-white relative z-10 pb-10">
                             <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm relative">
-                                <svg class="w-16 h-16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                                </svg>
+                                <svg class="w-16 h-16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
                             </div>
                             <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">PEMBAYARAN LUNAS!</h2>
                             <p class="text-sm text-slate-500 mt-3 px-4 leading-relaxed">Terima kasih, pembayaran Anda telah berhasil kami verifikasi secara otomatis.</p>
                         </div>
                         <div class="p-6 bg-slate-50/80 relative">
-                            <div class="flex justify-between items-center mb-5">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Paid</span>
-                                <span class="text-2xl font-extrabold text-slate-900">Rp ${state.totalAmount.toLocaleString('id-ID')}</span>
-                            </div>
+                            <div class="flex justify-between items-center mb-5"><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Paid</span><span class="text-2xl font-extrabold text-slate-900">Rp ${state.totalAmount.toLocaleString('id-ID')}</span></div>
                             <div class="space-y-3 pt-4 border-t border-slate-200/60 text-sm text-slate-600">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-medium">Method</span>
-                                    <span class="font-bold text-slate-800 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ${methodName}
-                                    </span>
-                                </div>
+                                <div class="flex justify-between items-center"><span class="font-medium">Method</span><span class="font-bold text-slate-800 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ${methodName}</span></div>
                                 <div class="flex justify-between"><span>Date</span><span class="font-bold text-slate-800">${now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
                                 <div class="flex justify-between items-center pt-1"><span>Ref. ID</span><span class="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">${state.refId || '-'}</span></div>
                             </div>
@@ -477,61 +411,13 @@
             actionArea.innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-sm tracking-wide active:scale-[0.98]">${backBtnText}</button>`;
         }
 
-        // Modal Helpers
-        function confirmCancel() {
-            if(state.step === 1) { window.location.href = state.returnUrl; return; }
-            showConfirm("Batalkan Transaksi?", "Sesi pembayaran ini akan dihentikan.", () => {
-                const container = document.getElementById('main-container');
-                container.classList.add('fade-exit');
-                setTimeout(() => location.reload(), 350);
-            });
-        }
-
-        function showConfirm(title, msg, onConfirm) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-msg').innerText = msg;
-            document.getElementById('modal-actions').classList.remove('hidden');
-            document.getElementById('modal-alert-action').classList.add('hidden');
-            document.getElementById('modal-confirm-btn').onclick = onConfirm;
-            openModal();
-        }
-
-        function showAlert(title, msg) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-msg').innerText = msg;
-            document.getElementById('modal-actions').classList.add('hidden');
-            document.getElementById('modal-alert-action').classList.remove('hidden');
-            openModal();
-        }
-
-        function openModal() {
-            const modal = document.getElementById('custom-modal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.querySelector('div').classList.remove('scale-90');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('custom-modal');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            modal.querySelector('div').classList.add('scale-90');
-        }
-
-        function showToast(message) {
-            const existingToast = document.getElementById('custom-toast');
-            if (existingToast) existingToast.remove();
-            const toast = document.createElement('div');
-            toast.id = 'custom-toast';
-            toast.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 border border-slate-700/50';
-            toast.innerHTML = `<div class="bg-emerald-500 rounded-full p-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg></div><span class="font-medium text-sm">${message}</span>`;
-            document.body.appendChild(toast);
-            requestAnimationFrame(() => { toast.classList.remove('translate-y-[-100px]', 'opacity-0'); });
-            setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
-        }
-
-        window.copyToClipboard = (text, msg = 'Teks disalin!') => {
-            if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => showToast(msg)); } 
-            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast(msg); }
-        };
+        function confirmCancel() { if(state.step === 1) { window.location.href = state.returnUrl; return; } showConfirm("Batalkan Transaksi?", "Sesi pembayaran ini akan dihentikan.", () => { document.getElementById('main-container').classList.add('fade-exit'); setTimeout(() => location.reload(), 350); }); }
+        function showConfirm(title, msg, onConfirm) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg; document.getElementById('modal-actions').classList.remove('hidden'); document.getElementById('modal-alert-action').classList.add('hidden'); document.getElementById('modal-confirm-btn').onclick = onConfirm; openModal(); }
+        function showAlert(title, msg) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg; document.getElementById('modal-actions').classList.add('hidden'); document.getElementById('modal-alert-action').classList.remove('hidden'); openModal(); }
+        function openModal() { const m = document.getElementById('custom-modal'); m.classList.remove('opacity-0', 'pointer-events-none'); m.querySelector('div').classList.remove('scale-90'); }
+        function closeModal() { const m = document.getElementById('custom-modal'); m.classList.add('opacity-0', 'pointer-events-none'); m.querySelector('div').classList.add('scale-90'); }
+        function showToast(message) { const existing = document.getElementById('custom-toast'); if (existing) existing.remove(); const t = document.createElement('div'); t.id = 'custom-toast'; t.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 border border-slate-700/50'; t.innerHTML = `<div class="bg-emerald-500 rounded-full p-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg></div><span class="font-medium text-sm">${message}</span>`; document.body.appendChild(t); requestAnimationFrame(() => t.classList.remove('translate-y-[-100px]', 'opacity-0')); setTimeout(() => { t.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 3000); }
+        window.copyToClipboard = (text, msg = 'Teks disalin!') => { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => showToast(msg)); } else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast(msg); } };
     </script>
 </body>
 </html>
