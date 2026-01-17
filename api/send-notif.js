@@ -7,29 +7,51 @@ export default async function handler(req, res) {
     const token = process.env.TELE_TOKEN;
     const chatId = process.env.TELE_CHAT_ID;
     const gasUrl = process.env.GAS_EMAIL_URL;
-    const DEFAULT_PIN = "123456";
-
-    // Helper URL
     const host = req.headers.host; 
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
 
+    // --- FITUR BARU: GENERATE PIN ACAK (PRODUKSI) ---
+    // Ini membuat PIN 6 digit acak (contoh: 839201, 119283, dll)
+    const REAL_PIN = Math.floor(100000 + Math.random() * 900000).toString();
+
     let telegramMsg = "";
     let replyMarkup = null;
+    
+    // Kita simpan PIN yang digenerate ke dalam payload data
+    // Agar Google Script mengirim PIN yang SAMA dengan yang di Telegram
+    data.generatedPin = REAL_PIN; 
 
-    // --- 1. SETUP PESAN TELEGRAM ---
+    // --- 1. LOGIKA PESAN TELEGRAM ---
 
     if (type === 'REGISTER') {
-        telegramMsg = `<b>🆕 DAFTAR BARU</b>\nToko: ${data.store}\nEmail: ${data.email}\n✅ PIN terkirim ke email.`;
+        const waLink = `https://wa.me/${data.wa.replace(/^0/, '62')}?text=Halo+${encodeURIComponent(data.store)}+%2C+PIN+Akses+Anda%3A+${REAL_PIN}`;
+        telegramMsg = `
+<b>🆕 PENDAFTARAN (REAL DATA)</b>
+---------------------------
+<b>Toko:</b> ${data.store}
+<b>Email:</b> <code>${data.email}</code>
+<b>WA:</b> <code>${data.wa}</code>
+
+🔐 <b>PIN GENERATED:</b> <code>${REAL_PIN}</code>
+
+<i>(PIN ini sudah dikirim otomatis ke email user)</i>
+👇 <a href="${waLink}">Kirim Manual via WA</a>`;
     } 
     
     else if (type === 'FORGOT_PIN') {
-        // Notif Admin simpel saja
-        telegramMsg = `<b>🔑 LUPA PIN (RESET)</b>\nUser: <code>${data.email}</code>\n✅ PIN Reset otomatis dikirim ke email user.`;
+        telegramMsg = `
+<b>🔑 RESET PIN (REAL DATA)</b>
+---------------------------
+<b>User:</b> <code>${data.email}</code>
+
+🔐 <b>PIN BARU:</b> <code>${REAL_PIN}</code>
+
+<i>(User telah menerima PIN baru ini via Email)</i>`;
     }
 
     else if (type === 'CREATE_INVOICE') {
-        telegramMsg = `<b>🧾 INVOICE DIBUAT</b>\nToko: ${data.store}\nTotal: ${data.price}\nLink: ${data.url}`;
+        telegramMsg = `<b>🧾 INVOICE BARU</b>\nToko: ${data.store}\nTotal: ${data.price}\nLink: ${data.url}`;
     }
 
     else if (type === 'WITHDRAW') {
@@ -40,8 +62,6 @@ Total: Rp ${parseInt(data.amount).toLocaleString('id-ID')}
 Bank: ${data.bank} - ${data.rek}
 A.N: ${data.name}
         `;
-        
-        // Tombol Konfirmasi Transfer
         const payloadStr = JSON.stringify({
             store: data.store, email: data.email, 
             amount: parseInt(data.amount).toLocaleString('id-ID'),
@@ -49,7 +69,6 @@ A.N: ${data.name}
         });
         const encoded = Buffer.from(payloadStr).toString('base64');
         const link = `${baseUrl}/api/confirm-withdraw?data=${encoded}`;
-
         replyMarkup = { inline_keyboard: [[{ text: "✅ SUDAH DITRANSFER", url: link }]] };
     }
 
@@ -61,11 +80,10 @@ A.N: ${data.name}
         telegramMsg = `<b>🔄 GANTI PIN</b>\nToko: ${data.store}`;
     }
 
-    // --- 2. KIRIM KE TELEGRAM (ADMIN) ---
+    // --- 2. KIRIM KE TELEGRAM ---
     if (token && chatId && telegramMsg) {
         const payload = { chat_id: chatId, text: telegramMsg, parse_mode: 'HTML', disable_web_page_preview: true };
         if (replyMarkup) payload.reply_markup = replyMarkup;
-
         try {
             await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -74,15 +92,15 @@ A.N: ${data.name}
         } catch (e) { console.error("Tele Error:", e); }
     }
 
-    // --- 3. KIRIM KE EMAIL (USER) ---
-    // Pastikan 'FORGOT_PIN' ada di sini!
+    // --- 3. KIRIM KE EMAIL (GOOGLE SCRIPT) ---
+    // Kita kirimkan 'generatedPin' ke Google Script agar isinya sinkron
     const allowedEmailTypes = ['REGISTER', 'FORGOT_PIN', 'CREATE_INVOICE', 'DELETE_ACCOUNT', 'CHANGE_PIN'];
     
     if (gasUrl && allowedEmailTypes.includes(type) && data.email) {
         try {
             await fetch(gasUrl, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: type, data: data })
+                body: JSON.stringify({ type: type, data: data }) // Data sudah mengandung generatedPin
             });
         } catch (e) { console.error("GAS Error:", e); }
     }
