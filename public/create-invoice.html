@@ -11,79 +11,140 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #334155; min-height: 100vh; }
         .modern-card { background: #ffffff; border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
         .input-field { width: 100%; padding: 12px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; font-size: 0.875rem; transition: all 0.2s; color: #334155; font-weight: 600; }
-        .btn-main { background: #0f172a; color: white; padding: 12px 24px; border-radius: 1rem; font-weight: 700; transition: all 0.2s; width: 100%; }
+        .input-field:focus { outline: none; border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .input-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: block; }
+        .btn-main { background: #0f172a; color: white; padding: 12px 24px; border-radius: 1rem; font-weight: 700; transition: all 0.2s; cursor: pointer; }
+        .btn-main:hover { background: #1e293b; transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.3); }
         .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
-        .hidden { display: none; }
+        .btn-sec { background: transparent; color: #64748b; padding: 12px 24px; border-radius: 1rem; font-weight: 700; transition: all 0.2s; border: 2px solid #e2e8f0; }
+        .btn-sec:hover { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-box { animation: scaleIn 0.2s ease-out forwards; }
+        .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes fadeEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="flex items-center justify-center p-4 bg-slate-900">
+<body class="flex items-center justify-center p-4 sm:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
 
-    <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
-        <div class="modern-card p-8 w-full max-w-[400px] text-center">
-            <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6"><img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-12 h-12 object-contain"></div>
-            <h2 class="text-2xl font-bold text-slate-900 mb-6">Login Merchant</h2>
+    <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="modern-card p-8 sm:p-10 w-full max-w-[400px] text-center relative modal-box">
+            <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm border border-slate-100"><img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-12 h-12 object-contain"></div>
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Merchant Login</h2>
+            <p class="text-sm text-slate-500 mb-6 font-medium">Masuk untuk mengelola toko Anda.</p>
             
-            <input type="email" id="login-email" class="input-field mb-4" placeholder="Email Anda">
-            <input type="password" id="login-pin" class="input-field mb-6 text-center tracking-widest" placeholder="PIN (6 Digit)" maxlength="6">
-            
-            <button onclick="doLogin()" class="btn-main mb-4">MASUK</button>
-            <div class="flex justify-between text-sm font-bold text-slate-400">
-                <button onclick="toggleRegister(true)" class="text-indigo-600">Daftar Baru</button>
+            <div class="space-y-4 text-left">
+                <div><label class="input-label">Email</label><input type="email" id="login-email" class="input-field" placeholder="email@toko.com"></div>
+                <div><label class="input-label">PIN Keamanan</label><input type="password" id="login-pin" class="input-field text-center tracking-[0.5em] font-extrabold" placeholder="••••••" maxlength="6"></div>
+            </div>
+
+            <button onclick="doLogin()" class="btn-main w-full text-lg py-4 mt-8 mb-6">MASUK DASHBOARD</button>
+            <div class="flex justify-between items-center text-sm font-bold px-2">
+                <button onclick="openForgotPin()" class="text-slate-400 hover:text-slate-600">Lupa PIN?</button>
+                <button onclick="toggleRegister(true)" class="text-indigo-600 hover:text-indigo-800">Daftar Mitra Baru</button>
             </div>
         </div>
     </div>
 
-    <div id="register-overlay" class="hidden fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
-        <div class="modern-card p-8 w-full max-w-[400px] text-center">
-            <h2 class="text-xl font-bold text-slate-900 mb-4">Daftar Mitra</h2>
-            <input type="text" id="reg-store" class="input-field mb-3" placeholder="Nama Toko">
-            <input type="email" id="reg-email" class="input-field mb-3" placeholder="Email Aktif">
-            <input type="text" id="reg-wa" class="input-field mb-3" placeholder="No WhatsApp">
-            <input type="password" id="reg-pin" class="input-field mb-6 text-center tracking-widest" placeholder="Buat PIN (6 Digit)" maxlength="6">
-            
-            <button onclick="doRegister()" class="btn-main mb-4 bg-emerald-600">DAFTAR SEKARANG</button>
-            <button onclick="toggleRegister(false)" class="text-sm font-bold text-slate-400">Kembali ke Login</button>
+    <div id="register-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="modern-card p-8 w-full max-w-[400px] relative modal-box">
+            <button onclick="toggleRegister(false)" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <div class="mb-6 text-center">
+                <h3 class="text-2xl font-extrabold text-slate-900">Daftar Mitra</h3>
+                <p class="text-slate-500 text-sm font-medium">Data Anda aman tersimpan di server.</p>
+            </div>
+            <div class="space-y-4">
+                <div><label class="input-label">Nama Toko</label><input type="text" id="reg-store" class="input-field" placeholder="Contoh: Kopi Senja"></div>
+                <div><label class="input-label">Email Aktif</label><input type="email" id="reg-email" class="input-field" placeholder="email@toko.com"></div>
+                <div><label class="input-label">WhatsApp</label><input type="text" id="reg-wa" class="input-field" placeholder="0812xxx"></div>
+                <div><label class="input-label">Buat PIN (6 Angka)</label><input type="password" id="reg-pin" class="input-field text-center tracking-widest" placeholder="••••••" maxlength="6"></div>
+            </div>
+            <button onclick="doRegister()" class="btn-main w-full py-4 mt-8 bg-emerald-600 hover:bg-emerald-700">DAFTAR SEKARANG</button>
         </div>
     </div>
 
-    <div id="main-dashboard" class="w-full max-w-xl hidden">
-        <div class="modern-card p-8 mb-6 relative overflow-hidden bg-indigo-600 text-white">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-indigo-200 text-sm font-bold mb-1">Halo, <span id="dash-store">Toko</span></p>
-                    <h2 class="text-4xl font-extrabold" id="dash-balance">Rp 0</h2>
+    <div id="main-dashboard" class="w-full max-w-6xl hidden fade-enter">
+        <nav class="flex justify-between items-center mb-8 bg-white/10 backdrop-blur-xl p-4 pl-6 rounded-3xl border border-white/20 text-white shadow-2xl">
+            <div class="flex items-center gap-4"><img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-10 h-10 bg-white rounded-xl p-1"><span class="font-extrabold text-xl tracking-tight hidden sm:block">MERCHANT PANEL</span></div>
+            <div class="flex items-center gap-4">
+                <div class="text-right mr-2 hidden sm:block bg-white/10 px-4 py-2 rounded-xl border border-white/10">
+                    <p class="text-[10px] text-indigo-200 uppercase font-bold mb-0.5">Pemilik Toko</p>
+                    <p class="text-white font-bold text-sm leading-tight" id="nav-store-name">Loading...</p>
                 </div>
-                <button onclick="logout()" class="bg-white/20 p-2 rounded-lg text-xs font-bold">LOGOUT</button>
+                <button onclick="refreshBalance()" class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-2xl transition-all border border-white/10" title="Refresh Saldo"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
+                <button onclick="logout()" class="bg-red-500/80 hover:bg-red-600 text-white px-4 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-red-500/20">LOGOUT</button>
             </div>
-            <button onclick="refreshBalance()" class="mt-4 text-xs bg-black/20 px-3 py-1 rounded-full flex items-center gap-2">🔄 Refresh Saldo</button>
-        </div>
+        </nav>
 
-        <div class="modern-card p-8">
-            <h3 class="font-bold text-lg mb-4">Buat Tagihan Baru</h3>
-            <input type="text" id="itemName" class="input-field mb-3" placeholder="Nama Barang">
-            <input type="number" id="itemPrice" class="input-field mb-3" placeholder="Harga (Rp)">
-            
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <input type="text" id="custWa" class="input-field" placeholder="WA Pembeli">
-                <input type="email" id="custEmail" class="input-field" placeholder="Email Pembeli">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 space-y-8">
+                <div class="modern-card p-8">
+                    <div class="flex justify-between items-center mb-8"><div><h3 class="text-2xl font-extrabold text-slate-900">Buat Invoice</h3><p class="text-slate-500 text-sm font-medium">Link pembayaran otomatis</p></div><span class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full font-extrabold border border-indigo-100">Max 10 Items</span></div>
+                    
+                    <div class="bg-slate-50 rounded-3xl p-6 mb-6 border border-slate-200/60">
+                        <div class="flex justify-between mb-4 items-center"><label class="input-label mb-0">Daftar Barang</label><span id="item-count" class="text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200">0/10</span></div>
+                        <div id="items-wrapper" class="space-y-3 mb-4 min-h-[50px]"></div>
+                        <button onclick="addItem()" class="w-full py-3 bg-white border-2 border-dashed border-indigo-200 text-indigo-500 rounded-2xl text-sm font-bold hover:bg-indigo-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>Tambah Barang</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-end">
+                        <div class="bg-slate-900 rounded-3xl p-5 text-white relative overflow-hidden shadow-xl"><div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] opacity-20"></div><label class="text-[10px] font-bold text-indigo-200 uppercase tracking-wider mb-1 block relative">Total Tagihan</label><div class="text-3xl font-extrabold tracking-tight relative" id="total-display">Rp 0</div></div>
+                        <div class="space-y-4"><div><label class="input-label">WhatsApp Pelanggan</label><input type="text" id="custWa" class="input-field" placeholder="0812xxx"></div><div><label class="input-label">Email Pelanggan</label><input type="email" id="custEmail" class="input-field" placeholder="email@pembeli.com"></div></div>
+                    </div>
+                    
+                    <button onclick="createInvoice()" class="btn-main w-full py-4 text-lg shadow-xl shadow-slate-900/20">✨ BUAT LINK PEMBAYARAN</button>
+                    
+                    <div id="result-area" class="hidden mt-8 pt-8 border-t-2 border-dashed border-slate-100">
+                        <label class="input-label text-emerald-600">Link Berhasil Dibuat!</label>
+                        <div class="relative mb-4"><textarea id="resultUrl" class="input-field h-24 font-mono text-xs text-slate-600 bg-slate-50/50 resize-none" readonly></textarea></div>
+                        <div class="grid grid-cols-2 gap-4"><button onclick="copyLink()" class="btn-sec flex items-center justify-center gap-2">Copy Link</button><button onclick="shareWa()" class="btn-main bg-emerald-500 hover:bg-emerald-600">Kirim WA</button></div>
+                    </div>
+                </div>
             </div>
 
-            <button onclick="createInvoice()" class="btn-main">BUAT LINK BAYAR</button>
-            
-            <div id="result-area" class="hidden mt-6 p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                <p class="text-xs text-slate-500 font-bold mb-2">Link Pembayaran:</p>
-                <textarea id="resultUrl" class="input-field h-20 text-xs mb-2" readonly></textarea>
-                <button onclick="copyLink()" class="btn-main bg-slate-800 py-2 text-sm">Salin Link</button>
+            <div class="lg:col-span-5 space-y-8">
+                <div class="modern-card p-8 bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-800 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20">
+                    <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-400 rounded-full blur-[80px] opacity-30 pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-8">
+                            <div><p class="text-sm text-indigo-200 font-bold uppercase tracking-widest mb-2">Saldo Dompet</p><h2 class="text-[2.5rem] font-extrabold leading-none" id="wallet-balance">Rp 0</h2></div>
+                            <button onclick="openWithdraw()" class="bg-white text-slate-900 px-5 py-3 rounded-2xl text-sm font-extrabold shadow-lg hover:scale-105 transition-all flex items-center gap-2">💸 CAIRKAN</button>
+                        </div>
+                        <div class="bg-black/20 rounded-2xl p-5 backdrop-blur-md border border-white/10 mb-6"><div class="flex justify-between text-xs mb-3 font-medium"><span class="text-indigo-200">User</span><span class="font-bold text-white" id="wallet-user">-</span></div><div class="w-full bg-black/30 rounded-full h-2.5 mb-2 relative overflow-hidden"><div class="bg-emerald-400 h-2.5 rounded-full relative" style="width: 100%"></div></div></div>
+                    </div>
+                </div>
+
+                <div class="modern-card p-8 h-[400px] flex flex-col">
+                    <div class="flex justify-between items-center mb-6"><div><h3 class="font-extrabold text-slate-900 text-lg">Riwayat</h3><p class="text-slate-400 text-sm font-medium">Transaksi Terakhir</p></div></div>
+                    <div class="overflow-y-auto flex-1 flex flex-col justify-center text-center text-slate-400 text-sm italic" id="history-list">
+                        <p>Belum ada transaksi</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3></div>
+        <div class="space-y-4">
+            <div><label class="input-label">Nominal</label><input type="number" id="wd-amount" class="input-field" placeholder="Min 50.000"></div>
+            <div><label class="input-label">Bank</label><select id="wd-bank" class="input-field"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>DANA</option><option>GoPay</option></select></div>
+            <div><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field"></div>
+            <div><label class="input-label">Atas Nama</label><input type="text" id="wd-name" class="input-field"></div>
+            </div>
+        <button onclick="submitWithdraw()" class="btn-main w-full py-4 mt-8 bg-indigo-600">Kirim Pengajuan</button></div>
+    </div>
+
+    <div id="forgot-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box text-center"><button onclick="closeModal('forgot-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-amber-100 text-3xl">🔑</div><h3 class="text-2xl font-extrabold text-slate-900 mb-2">Reset PIN</h3><p class="text-slate-500 text-sm mb-6">Masukkan email Anda.</p><input type="email" id="forgot-email" class="input-field" placeholder="email@toko.com"><button onclick="submitForgot()" class="btn-main w-full py-4 mt-6 bg-slate-800">KIRIM PIN BARU</button></div></div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-8 py-4 rounded-full opacity-0 pointer-events-none transition-all duration-300 text-sm font-bold transform translate-y-10 z-[100] shadow-2xl flex items-center gap-3 border border-white/10"><span id="toast-icon">🔔</span><span id="toast-msg">Notification</span></div>
 
     <script>
-        // Data User yang sedang login (disimpan di memori browser sementara)
-        let currentUser = null; 
+        const BASE_URL = window.location.origin + "/"; 
+        let items = []; 
+        let currentUser = null; // Menyimpan data user yang login
 
-        // --- AUTH SYSTEM ---
-        
+        // --- AUTH SYSTEM (DATABASE) ---
+
         function toggleRegister(show) {
             document.getElementById('login-overlay').classList.toggle('hidden', show);
             document.getElementById('register-overlay').classList.toggle('hidden', !show);
@@ -94,10 +155,13 @@
             const email = document.getElementById('reg-email').value;
             const wa = document.getElementById('reg-wa').value;
             const pin = document.getElementById('reg-pin').value;
+            const btn = document.querySelector('#register-overlay button.btn-main');
 
-            if(!store || !email || !pin) return alert("Lengkapi data!");
+            if(!store || !email || !pin) return showToast("Lengkapi semua data!", "⚠️");
 
+            btn.innerText = "MENDAFTAR..."; btn.disabled = true;
             try {
+                // Register ke DB
                 const res = await fetch('/api/user', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ action: 'register', store, email, wa, pin })
@@ -105,21 +169,31 @@
                 const data = await res.json();
                 
                 if(res.ok) {
-                    alert("Berhasil! Silakan Login.");
+                    // Kirim Notif Telegram & Email (PIN Acak akan digenerate backend)
+                    await fetch('/api/send-notif', { 
+                        method:'POST', headers:{'Content-Type':'application/json'}, 
+                        body: JSON.stringify({ type:'REGISTER', data: {store, email, wa} }) 
+                    });
+                    
+                    alert("Berhasil! Silakan cek Email untuk PIN Login.");
                     toggleRegister(false);
-                    // Kirim notif sambutan (Optional)
-                    fetch('/api/send-notif', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'REGISTER', data: {store, email, wa} }) });
                 } else {
                     alert(data.error);
                 }
             } catch(e) { alert("Error koneksi"); }
+            btn.innerText = "DAFTAR SEKARANG"; btn.disabled = false;
         }
 
         async function doLogin() {
             const email = document.getElementById('login-email').value;
             const pin = document.getElementById('login-pin').value;
+            const btn = document.querySelector('#login-overlay button.btn-main');
 
+            if(!email || !pin) return showToast("Isi Email & PIN!", "⚠️");
+
+            btn.innerText = "MEMVERIFIKASI..."; btn.disabled = true;
             try {
+                // Login ke DB
                 const res = await fetch('/api/user', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ action: 'login', email, pin })
@@ -127,24 +201,29 @@
                 const resp = await res.json();
 
                 if(res.ok) {
-                    currentUser = resp.data; // Simpan data user
+                    currentUser = resp.data; // Simpan data user real
                     document.getElementById('login-overlay').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     updateUI();
+                    showToast("Login Berhasil!", "✅");
                 } else {
-                    alert(resp.error);
+                    showToast(resp.error, "❌");
                 }
-            } catch(e) { alert("Gagal login: " + e.message); }
+            } catch(e) { showToast("Gagal login", "⚠️"); }
+            btn.innerText = "MASUK DASHBOARD"; btn.disabled = false;
         }
 
         function updateUI() {
             if(!currentUser) return;
-            document.getElementById('dash-store').innerText = currentUser.store;
-            document.getElementById('dash-balance').innerText = "Rp " + currentUser.balance.toLocaleString('id-ID');
+            document.getElementById('nav-store-name').innerText = currentUser.store;
+            document.getElementById('wallet-user').innerText = currentUser.email;
+            document.getElementById('wallet-balance').innerText = "Rp " + currentUser.balance.toLocaleString('id-ID');
         }
 
         async function refreshBalance() {
             if(!currentUser) return;
+            const btn = document.querySelector('nav button[title="Refresh Saldo"]');
+            btn.classList.add('animate-spin');
             try {
                 const res = await fetch('/api/user', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -154,69 +233,131 @@
                 if(data.balance !== undefined) {
                     currentUser.balance = data.balance;
                     updateUI();
+                    showToast("Saldo diperbarui", "💰");
                 }
             } catch(e) {}
+            setTimeout(() => btn.classList.remove('animate-spin'), 1000);
         }
 
         function logout() {
-            currentUser = null;
-            location.reload();
+            if(confirm("Keluar dari akun?")) {
+                currentUser = null;
+                location.reload();
+            }
         }
 
-        // --- INVOICE SYSTEM ---
+        // --- INVOICE LOGIC ---
+        function addItem() { 
+            if (items.length >= 10) return showToast("Maksimal 10 barang!", "✋"); 
+            items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); 
+        }
+        function updateItem(id, f, v) { 
+            const i = items.find(x => x.id === id); 
+            if(i) { f === 'price' ? i.price = parseInt(v.replace(/\D/g, "") || 0) : i.name = v; } 
+            renderItems(false); 
+        }
+        function renderItems(full = true) {
+            document.getElementById('item-count').innerText = `${items.length}/10`;
+            document.getElementById('total-display').innerText = "Rp " + items.reduce((s, i) => s + (i.price || 0), 0).toLocaleString('id-ID');
+            if (!full) return;
+            const wrapper = document.getElementById('items-wrapper');
+            wrapper.innerHTML = items.map((i,x) => `<div class="flex gap-3 items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm"><span class="text-xs font-bold text-slate-400 w-6 text-center">${x+1}</span><input type="text" placeholder="Nama Barang" class="input-field flex-1 bg-transparent border-none px-2 shadow-none" value="${i.name}" oninput="updateItem(${i.id}, 'name', this.value)"><input type="text" placeholder="0" class="input-field w-24 text-right bg-transparent border-none px-2 shadow-none font-bold" value="${i.price > 0 ? i.price.toLocaleString('id-ID') : ''}" oninput="updateItem(${i.id}, 'price', this.value)"></div>`).join('');
+            if(items.length===0) wrapper.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">Tambah barang dulu...</p>';
+        }
 
         async function createInvoice() {
-            if(!currentUser) return;
-
-            const item = document.getElementById('itemName').value;
-            const price = document.getElementById('itemPrice').value;
+            if(!currentUser) return showToast("Sesi habis, login ulang.", "⚠️");
             const wa = document.getElementById('custWa').value;
             const email = document.getElementById('custEmail').value;
+            const total = items.reduce((s, i) => s + (i.price || 0), 0);
 
-            if(!item || !price) return alert("Isi data barang!");
+            if(!wa || !email || total === 0) return showToast("Lengkapi data & barang!", "⚠️");
 
-            // Generate Link
-            // Disini kita kirim 'items' encode base64 ke frontend index.html
-            // Tapi untuk backend, kita akan kirim data ke API checkout nanti
-            const items = [{n: item, p: parseInt(price)}];
-            const itemsEncoded = btoa(JSON.stringify(items));
+            const itemsEncoded = btoa(JSON.stringify(items.map(i => ({n: i.name, p: i.price}))));
+            const prodName = items.length + " Items";
             const refId = "INV-" + Date.now();
             
-            // Generate URL Frontend
-            const params = new URLSearchParams({
-                store: currentUser.store,
-                price: price,
-                items: itemsEncoded,
-                prod: item,
-                ref_id: refId,
-                wa: wa, email: email
-            });
-            const finalUrl = window.location.origin + "/?" + params.toString();
+            // 1. Generate Link Frontend
+            const params = new URLSearchParams({ store: currentUser.store, price: total, items: itemsEncoded, prod: prodName, ref_id: refId, wa, email });
+            const finalUrl = `${BASE_URL}?${params.toString()}`;
 
             document.getElementById('resultUrl').value = finalUrl;
             document.getElementById('result-area').classList.remove('hidden');
 
-            // SIMPAN KE DATABASE (PENTING AGAR SALDO MASUK KE USER INI)
+            // 2. SIMPAN KE DB (PENTING: merchant_email)
             await fetch('/api/checkout', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    merchant_email: currentUser.email, // <-- INI YANG BIKIN SALDO MASUK KE USER
-                    product_name: item,
-                    price: price,
+                    merchant_email: currentUser.email, // <-- KUNCI MULTI USER
+                    store_name: currentUser.store,
+                    product_name: prodName,
+                    price: total,
                     customer_contact: wa,
                     customer_email: email,
                     ref_id: refId,
                     method: 'qris'
                 })
             });
+
+            // 3. Notif Telegram
+            fetch('/api/send-notif', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ type: 'CREATE_INVOICE', data: { store: currentUser.store, price: total.toLocaleString('id-ID'), prod: prodName, url: finalUrl } })
+            });
+
+            showToast("Link Siap!", "✨");
         }
 
-        function copyLink() {
-            const copyText = document.getElementById("resultUrl");
-            copyText.select();
-            navigator.clipboard.writeText(copyText.value);
-            alert("Link tersalin!");
+        // --- FEATURES ---
+        async function submitWithdraw() {
+            if(!currentUser) return;
+            const amount = parseInt(document.getElementById('wd-amount').value);
+            const bank = document.getElementById('wd-bank').value;
+            const rek = document.getElementById('wd-rek').value;
+            const name = document.getElementById('wd-name').value;
+
+            if(!amount || !rek || !name) return showToast("Data kurang lengkap", "⚠️");
+            if(amount > currentUser.balance) return showToast("Saldo tidak cukup", "💸");
+
+            // Kirim Notif Withdraw
+            const res = await fetch('/api/send-notif', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    type: 'WITHDRAW', 
+                    data: { store: currentUser.store, email: currentUser.email, amount, bank, rek, name } 
+                })
+            });
+
+            if(res.ok) {
+                // Potong Saldo Lokal (Visual) - Saldo DB belum dipotong sampai admin confirm (opsional)
+                // Atau bisa langsung potong di DB via API khusus (next step)
+                showToast("Request terkirim!", "✅");
+                closeModal('withdraw-modal');
+            }
         }
+
+        async function submitForgot() {
+            const email = document.getElementById('forgot-email').value;
+            if(!email) return showToast("Isi email!", "⚠️");
+            await fetch('/api/send-notif', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ type: 'FORGOT_PIN', data: { email } })
+            });
+            alert("Cek email Anda untuk PIN baru.");
+            closeModal('forgot-modal');
+        }
+
+        // Utils
+        function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Disalin!", "📋"); }
+        function shareWa() { const url = document.getElementById("resultUrl").value; window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Tagihan:%20${url}`, '_blank'); }
+        function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
+        function openForgotPin() { document.getElementById('forgot-modal').classList.remove('hidden'); }
+        function openSettings() { alert("Fitur segera hadir!"); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
+        
+        // Init
+        addItem();
     </script>
 </body>
 </html>
