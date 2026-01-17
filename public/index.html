@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
-        // Jika user membuka domain create-invoiceku... alihkan ke tool buat invoice
         if (window.location.hostname === 'create-invoiceku.vercel.app') {
             window.location.replace('/create-invoice.html');
         }
@@ -34,15 +33,12 @@
                         linear-gradient(-45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%);
             background-size: 16px 32px; background-position: 0 100%; height: 16px;
         }
-        .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
-        .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: #10b981; fill: none; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards; }
-        @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+        /* QRIS Pattern */
+        .qris-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 12px 12px; }
+        
+        /* Animasi Pop */
         .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
         @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .dropdown-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: top; }
-        .dropdown-open { opacity: 1; transform: scaleY(1); max-height: 300px; }
-        .dropdown-closed { opacity: 0; transform: scaleY(0.9); max-height: 0; pointer-events: none; }
-        .qris-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 12px 12px; }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -53,7 +49,7 @@
         
         <header class="flex-none px-6 py-4 bg-white/80 border-b border-slate-100 flex items-center justify-between backdrop-blur-xl z-20">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-200 overflow-hidden">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-200 overflow-hidden p-1">
                    <img id="header-logo" src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-full h-full object-contain">
                 </div>
                 <div>
@@ -97,16 +93,13 @@
     <input type="hidden" id="customerEmail">
 
     <script>
-        // ============================================
-        // 🌍 KONFIGURASI DOMAIN
-        // ============================================
+        // --- KONFIGURASI DOMAIN ---
         const CURRENT_DOMAIN = window.location.hostname;
         const DOMAIN_SETTINGS = {
             "payment-gateway-mutasi.vercel.app": { 
                 name: "Wago Payment ID",
                 logo: "https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png"
             }
-            // Tambahkan domain lain di sini jika perlu
         };
 
         function applyDomainSettings() {
@@ -117,10 +110,7 @@
             document.getElementById('dynamic-favicon').href = settings.logo;
         }
 
-        // ============================================
-        // END KONFIGURASI
-        // ============================================
-
+        // --- DATA BANK ---
         const bankData = [
             { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
             { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
@@ -137,7 +127,7 @@
             notifyUrl: "", 
             selectedMethod: 'qris', 
             productName: "Produk", 
-            timeoutMinutes: 15, // <--- UPDATE: DEFAULT 15 MENIT
+            timeoutMinutes: 15, 
             refId: "", 
             activeQrisData: null 
         };
@@ -153,8 +143,6 @@
             state.productName = decodeURIComponent(params.get('prod') || "Produk");
             state.totalAmount = parseInt(params.get('price')) || 1000;
             state.refId = params.get('ref_id') || "";
-            
-            // Override Timer dari URL jika ada, jika tidak pakai default 15
             if(params.get('time')) state.timeoutMinutes = parseInt(params.get('time'));
             
             if(params.get('store')) {
@@ -170,53 +158,13 @@
             renderStep1();
         };
 
-        window.toggleBankDropdown = () => {
-            const dropdown = document.getElementById('bank-dropdown-list');
-            const arrow = document.getElementById('bank-arrow');
-            if (dropdown.classList.contains('dropdown-closed')) {
-                dropdown.classList.remove('dropdown-closed'); dropdown.classList.add('dropdown-open');
-                arrow.style.transform = 'rotate(180deg)';
-            } else {
-                dropdown.classList.add('dropdown-closed'); dropdown.classList.remove('dropdown-open');
-                arrow.style.transform = 'rotate(0deg)';
-            }
+        // --- CORE FUNCTIONS: TAMPILAN PEMBAYARAN ---
+
+        // Fungsi memilih metode (QRIS / Bank)
+        window.selectMethod = (methodId) => {
+            state.selectedMethod = methodId;
+            renderStep1(); // Re-render untuk update UI (Radio button active)
         };
-
-        window.selectQris = () => {
-            state.selectedMethod = 'qris';
-            updateSelectionUI();
-            document.getElementById('bank-dropdown-list')?.classList.add('dropdown-closed');
-        };
-
-        window.selectBankOption = (id, name, logo) => {
-            state.selectedMethod = id;
-            document.getElementById('bank-selected-logo').src = logo;
-            document.getElementById('bank-selected-logo').classList.remove('hidden');
-            document.getElementById('bank-default-icon').classList.add('hidden');
-            document.getElementById('bank-selected-text').innerText = name;
-            document.getElementById('bank-selected-desc').innerText = 'Metode Terpilih';
-            toggleBankDropdown();
-            updateSelectionUI();
-        };
-
-        function updateSelectionUI() {
-            const qrisCard = document.getElementById('qris-card');
-            const bankCard = document.getElementById('bank-card-container');
-            const qrisInd = document.getElementById('qris-indicator');
-            const bankInd = document.getElementById('bank-indicator');
-
-            if (state.selectedMethod === 'qris') {
-                qrisCard.className = "group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl";
-                qrisInd.className = "w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800";
-                bankCard.className = "relative p-4 rounded-2xl border transition-all duration-300 bg-white text-slate-700 border-slate-200 hover:border-slate-300 cursor-pointer";
-                bankInd.className = "w-5 h-5 rounded-full border-2 border-slate-300";
-            } else {
-                qrisCard.className = "group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-white text-slate-700 border-slate-200 hover:border-slate-300";
-                qrisInd.className = "w-5 h-5 rounded-full border-2 border-slate-300";
-                bankCard.className = "relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl cursor-pointer";
-                bankInd.className = "w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800";
-            }
-        }
 
         function renderStep1() {
             const content = document.getElementById('app-content');
@@ -224,42 +172,61 @@
             const minTransfer = 50000; 
             const showBank = state.totalAmount >= minTransfer;
 
-            const bankListHtml = bankData.map(bank => `
-                <div onclick="selectBankOption('${bank.id}', '${bank.name}', '${bank.logo}')" class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border-b border-slate-50 last:border-0">
-                    <div class="w-10 h-10 bg-white rounded-lg border border-slate-100 flex items-center justify-center p-1"><img src="${bank.logo}" class="w-full h-full object-contain"></div>
-                    <span class="text-sm font-bold text-slate-700">${bank.name}</span>
-                </div>
-            `).join('');
-
-            let bankSectionHtml = "";
+            // --- 1. BUILD BANK LIST (TAMPILAN BARU: LIST BUKAN DROPDOWN) ---
+            let bankListHtml = '';
             if (showBank) {
-                bankSectionHtml = `
-                    <div class="mt-4 relative">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Transfer Bank</label>
-                        <div id="bank-card-container" onclick="toggleBankDropdown()" class="relative p-4 rounded-2xl border transition-all duration-300 bg-white text-slate-700 border-slate-200 hover:border-slate-300 cursor-pointer">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-white border border-slate-200 overflow-hidden">
-                                    <svg id="bank-default-icon" class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
-                                    <img id="bank-selected-logo" src="" class="w-full h-full object-contain hidden p-1">
-                                </div>
-                                <div class="flex-1">
-                                    <h4 id="bank-selected-text" class="font-bold text-sm">Pilih Bank Transfer...</h4>
-                                    <p id="bank-selected-desc" class="text-xs mt-0.5 opacity-80">Klik untuk melihat daftar bank</p>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div id="bank-indicator" class="w-5 h-5 rounded-full border-2 border-slate-300"></div>
-                                    <svg id="bank-arrow" class="w-4 h-4 transition-transform duration-300 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                            </div>
+                const bankItems = bankData.map(bank => {
+                    const isSelected = state.selectedMethod === bank.id;
+                    // Styling jika dipilih: Border hijau, Background agak hijau
+                    const containerClass = isSelected 
+                        ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" 
+                        : "border-slate-200 bg-white hover:border-emerald-300";
+                    
+                    const radioClass = isSelected
+                        ? "border-emerald-500 bg-emerald-500"
+                        : "border-slate-300 bg-white";
+
+                    return `
+                    <div onclick="selectMethod('${bank.id}')" class="cursor-pointer relative p-3 rounded-2xl border transition-all duration-200 mb-3 flex items-center gap-4 ${containerClass}">
+                        <div class="w-10 h-10 bg-white rounded-lg border border-slate-100 p-1 flex items-center justify-center">
+                            <img src="${bank.logo}" class="w-full h-full object-contain">
                         </div>
-                        <div id="bank-dropdown-list" class="dropdown-content dropdown-closed absolute w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-30 overflow-hidden"><div class="p-2 max-h-[250px] overflow-y-auto no-scrollbar">${bankListHtml}</div></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm text-slate-700">${bank.name}</h4>
+                            <p class="text-[10px] text-slate-400">Cek Otomatis</p>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center ${radioClass}">
+                            ${isSelected ? '<div class="w-2 h-2 bg-white rounded-full"></div>' : ''}
+                        </div>
                     </div>`;
+                }).join('');
+
+                bankListHtml = `
+                    <div class="mt-6">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Transfer Bank</h2>
+                        ${bankItems}
+                    </div>
+                `;
             }
+
+            // --- 2. BUILD QRIS CARD (TAMPILAN BARU: LOGO RESMI) ---
+            const isQrisSelected = state.selectedMethod === 'qris';
+            const qrisContainerClass = isQrisSelected 
+                ? "bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl" 
+                : "bg-white text-slate-700 border border-slate-200 hover:border-slate-300";
+            
+            const qrisRadioClass = isQrisSelected
+                ? "bg-emerald-400 border-slate-800 shadow-[0_0_10px_rgba(52,211,153,0.8)]"
+                : "border-slate-300";
+
+            // LOGO QRIS RESMI (URL WIKIMEDIA)
+            const qrisLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
 
             content.innerHTML = `
                 <div class="px-2 py-4 fade-enter pb-20">
+                    
                     <div class="mb-6">
-                        <div class="flex items-center justify-between mb-3 px-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Order Summary</h2></div>
+                        <div class="flex items-center justify-between mb-3 px-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Ringkasan</h2></div>
                         <div class="bg-white/80 backdrop-blur-md rounded-[1.5rem] p-5 shadow-sm border border-white">
                              <div class="flex gap-4 py-2">
                                 <div class="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-xl shadow-sm border border-slate-100">📦</div>
@@ -273,16 +240,24 @@
                             </div>
                         </div>
                     </div>
+
                     <div>
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Metode Pembayaran</h2>
-                        <div id="qris-card" onclick="selectQris()" class="group cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl">
+                        
+                        <div onclick="selectMethod('qris')" class="cursor-pointer relative p-4 rounded-2xl transition-all duration-300 ${qrisContainerClass}">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-700 border border-slate-600"><svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 0H6.414a1 1 0 00-.707.293L4.293 16.707A1 1 0 004 17.414V20h4v-2.586a1 1 0 00-.293-.707L6.293 15.293zM20 5l-1.414-1.414A2 2 0 0017.172 3H6.828a2 2 0 00-1.414.586L4 5v14h16V5z"/></svg></div>
-                                <div class="flex-1"><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-xs mt-0.5 opacity-80">Scan via GoPay, OVO, Dana, dll</p></div>
-                                <div id="qris-indicator" class="w-5 h-5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-slate-800"></div>
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-white p-1 border border-white/20">
+                                    <img src="${qrisLogoUrl}" class="w-full h-full object-contain">
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-sm">QRIS (Otomatis)</h4>
+                                    <p class="text-[10px] opacity-80 mt-0.5">Scan via GoPay, OVO, Dana, BCA</p>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border-2 ${qrisRadioClass}"></div>
                             </div>
                         </div>
-                        ${bankSectionHtml}
+
+                        ${bankListHtml}
                     </div>
                 </div>`;
             
@@ -346,7 +321,6 @@
                     </div>`;
                 instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
             } else {
-                
                 const merchantName = apiData.qris_meta?.name || "Merchant QRIS";
                 const merchantNMID = apiData.qris_meta?.nmid || "-";
 
@@ -399,69 +373,33 @@
 
         async function downloadQris() {
             if (!state.activeQrisData) return;
-
             const { image, name, nmid } = state.activeQrisData;
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
-            canvas.width = 400;
-            canvas.height = 650;
+            canvas.width = 400; canvas.height = 650;
 
             const qrisLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
-            const logoImg = new Image();
-            logoImg.crossOrigin = "Anonymous";
-            logoImg.src = qrisLogoUrl;
+            const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; logoImg.src = qrisLogoUrl;
 
             logoImg.onload = () => {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#bf1e2e';
-                ctx.fillRect(0, 0, canvas.width, 80);
-
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#bf1e2e'; ctx.fillRect(0, 0, canvas.width, 80);
                 ctx.filter = 'brightness(0) invert(1)';
-                const logoWidth = 90; 
-                const logoHeight = 30;
-                ctx.drawImage(logoImg, 25, 25, logoWidth, logoHeight);
+                ctx.drawImage(logoImg, 25, 25, 90, 30);
                 ctx.filter = 'none';
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'right'; ctx.fillText('National Standard', canvas.width - 25, 48);
+                ctx.fillStyle = '#1e293b'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(name.toUpperCase(), canvas.width / 2, 130);
+                ctx.fillStyle = '#64748b'; ctx.font = '14px monospace'; ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
 
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'right';
-                ctx.fillText('National Standard', canvas.width - 25, 48);
-
-                ctx.fillStyle = '#1e293b'; 
-                ctx.font = 'bold 22px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(name.toUpperCase(), canvas.width / 2, 130);
-
-                ctx.fillStyle = '#64748b'; 
-                ctx.font = '14px monospace';
-                ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
-
-                const qrImg = new Image();
-                qrImg.src = image;
-                
+                const qrImg = new Image(); qrImg.src = image;
                 qrImg.onload = () => {
                     const qrSize = 300;
-                    const xPos = (canvas.width - qrSize) / 2;
-                    ctx.drawImage(qrImg, xPos, 190, qrSize, qrSize);
-
-                    // NOMINAL DI GAMBAR
-                    ctx.fillStyle = '#1e293b'; 
-                    ctx.font = 'bold 20px sans-serif';
-                    ctx.textAlign = 'center';
+                    ctx.drawImage(qrImg, (canvas.width - qrSize) / 2, 190, qrSize, qrSize);
+                    ctx.fillStyle = '#1e293b'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
                     ctx.fillText(`Total: ${formatRupiah(state.totalAmount)}`, canvas.width / 2, 530);
-
-                    ctx.fillStyle = '#94a3b8'; 
-                    ctx.font = '12px sans-serif';
+                    ctx.fillStyle = '#94a3b8'; ctx.font = '12px sans-serif';
                     ctx.fillText('Dicetak oleh: GoPay', canvas.width / 2, 570);
-
-                    const link = document.createElement('a');
-                    link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-
+                    const link = document.createElement('a'); link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`; link.href = canvas.toDataURL('image/png'); link.click();
                     showToast("Gambar QRIS berhasil disimpan!");
                 };
             };
@@ -470,8 +408,7 @@
         function startTimer(duration) {
             let timer = duration;
             state.timerInterval = setInterval(() => {
-                const display = document.querySelector('#timer');
-                if(!display) return;
+                const display = document.querySelector('#timer'); if(!display) return;
                 let m = parseInt(timer / 60, 10), s = parseInt(timer % 60, 10);
                 display.textContent = `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
                 if (--timer < 0) { clearInterval(state.timerInterval); showAlert("Waktu Habis", "Sesi pembayaran telah berakhir."); setTimeout(() => location.reload(), 2000); }
