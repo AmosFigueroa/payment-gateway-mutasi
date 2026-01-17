@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// 1. Schema User (Wajib sama dengan api/user.js agar bisa update PIN)
+// Schema User (Harus sama persis)
 const UserSchema = new mongoose.Schema({
   store_name: String,
   email: { type: String, unique: true, required: true },
@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-// 2. Schema Withdraw (Untuk tombol konfirmasi transfer)
+// Schema Withdraw
 const WithdrawSchema = new mongoose.Schema({
   store: String, email: String, amount: Number,
   bank: String, rek: String, name: String,
@@ -25,92 +25,69 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     const { type, data } = req.body;
     
-    // Config
     const token = process.env.TELEGRAM_BOT_TOKEN; 
     const chatId = process.env.TELEGRAM_CHAT_ID;
     const gasUrl = process.env.GAS_EMAIL_URL;
 
     // Helper
     const sanitize = (str) => String(str || "-").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const REAL_PIN = Math.floor(100000 + Math.random() * 900000).toString();
     const host = req.headers.host || 'create-invoiceku.vercel.app';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
-
-    // GENERATE PIN BARU
-    const REAL_PIN = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // BERSIHKAN EMAIL (PENTING AGAR COCOK DG DATABASE)
+    const cleanEmail = data.email ? data.email.toLowerCase().trim() : "";
     data.generatedPin = REAL_PIN; 
 
-    // KONEKSI DATABASE (PENTING!)
+    // Koneksi DB
     if (mongoose.connection.readyState !== 1) await mongoose.connect(MONGODB_URI);
 
     let telegramMsg = "";
     let replyMarkup = null;
+    let shouldSendEmail = false; // Flag cek sukses/gagal
 
-    // --- LOGIKA UTAMA ---
+    // --- LOGIKA ---
 
-    // A. RESET PIN (UPDATE DATABASE)
+    // 1. RESET PIN (DENGAN PENGECEKAN)
     if (type === 'FORGOT_PIN') {
-        // Cari User & Update PIN di MongoDB
-        const updatedUser = await User.findOneAndUpdate(
-            { email: data.email },
-            { pin: REAL_PIN } // <-- INI PERBAIKANNYA (Simpan PIN Baru)
+        // Coba Update di Database
+        const user = await User.findOneAndUpdate(
+            { email: cleanEmail },
+            { pin: REAL_PIN }
         );
 
-        if (!updatedUser) {
-            // Jika email tidak ada di database
-            return res.status(404).json({ error: 'Email tidak terdaftar di database' });
-        }
-
-        telegramMsg = `
+        if (user) {
+            // JIKA SUKSES (User Ketemu)
+            shouldSendEmail = true;
+            telegramMsg = `
 🔑 <b>PERMINTAAN RESET PIN</b>
 ────────────────
-👤 <b>${sanitize(data.email)}</b>
+👤 <b>${sanitize(cleanEmail)}</b>
 ────────────────
 🔐 PIN Baru : <code>${REAL_PIN}</code>
 ────────────────
-<i>✅ PIN di Database sudah diupdate.</i>
-<i>✅ Email notifikasi terkirim.</i>
+<i>✅ Database Updated. User bisa login sekarang.</i>
 `;
+        } else {
+            // JIKA GAGAL (Email Salah/Typo)
+            shouldSendEmail = false;
+            telegramMsg = `
+⚠️ <b>RESET PIN GAGAL</b>
+────────────────
+👤 Email: ${sanitize(cleanEmail)}
+❌ <b>Error: Email tidak ditemukan di Database!</b>
+────────────────
+<i>User mungkin salah ketik email saat daftar.</i>
+`;
+        }
     }
 
-    // B. REGISTER (LOG)
-    // Note: Register sebenarnya sudah simpan PIN di api/user.js, 
-    // tapi notif ini hanya laporan. Kita tampilkan PIN yg diinput user (jika ada) atau generated.
-    else if (type === 'REGISTER') {
-        // Tidak perlu update DB karena api/user.js sudah melakukannya saat register
-        // Kita pakai PIN yang dikirim dari frontend (jika ada) atau generated
-        const pinDisplay = data.pin || REAL_PIN; 
-        
-        telegramMsg = `
-🆕 <b>PENDAFTARAN MITRA BARU</b>
-────────────────
-🏪 <b>${sanitize(data.store)}</b>
-────────────────
-📧 Email : ${sanitize(data.email)}
-📱 WA    : <code>${sanitize(data.wa)}</code>
-🔐 PIN   : <code>${pinDisplay}</code>
-────────────────
-<i>✅ User berhasil disimpan di Database.</i>
-`;
-    }
-
-    // C. CREATE INVOICE
-    else if (type === 'CREATE_INVOICE') {
-        telegramMsg = `
-🧾 <b>TAGIHAN BARU DIBUAT</b>
-────────────────
-🏪 <b>${sanitize(data.store)}</b>
-💰 <b>Rp ${data.price}</b>
-────────────────
-📦 Item : ${sanitize(data.prod)}
-🔗 <a href="${data.url}">Buka Link Pembayaran</a>
-`;
-    }
-
-    // D. WITHDRAW (SIMPAN DB UTK TOMBOL)
+    // 2. WITHDRAW
     else if (type === 'WITHDRAW') {
+        shouldSendEmail = false; // WD request gak kirim email, cuma notif admin
         const newWd = new Withdraw({
-            store: data.store, email: data.email, amount: data.amount,
+            store: data.store, email: cleanEmail, amount: data.amount,
             bank: data.bank, rek: data.rek, name: data.name
         });
         await newWd.save();
@@ -125,35 +102,32 @@ export default async function handler(req, res) {
 💳 Rek  : <code>${sanitize(data.rek)}</code>
 👤 A.N  : ${sanitize(data.name)}
 ────────────────
-<i>👉 Transfer manual, lalu klik tombol konfirmasi.</i>
+<i>👉 Klik tombol jika sudah transfer.</i>
 `;
         replyMarkup = { 
-            inline_keyboard: [[
-                { text: "✅ SAYA SUDAH TRANSFER", callback_data: `ACC_WD:${newWd._id}` }
-            ]] 
+            inline_keyboard: [[ { text: "✅ SAYA SUDAH TRANSFER", callback_data: `ACC_WD:${newWd._id}` } ]] 
         };
     }
 
-    // E. HAPUS AKUN
-    else if (type === 'DELETE_ACCOUNT') {
-        telegramMsg = `
-⛔ <b>PERMINTAAN HAPUS AKUN</b>
-────────────────
-🏪 <b>${sanitize(data.store)}</b>
-📝 Alasan: ${sanitize(data.reason)}
-────────────────
-<i>⚠️ Harap tinjau sebelum menghapus data.</i>
-`;
+    // 3. LAINNYA (Register/Invoice)
+    else {
+        shouldSendEmail = true; // Default kirim email
+        if (type === 'REGISTER') {
+            telegramMsg = `🆕 <b>DAFTAR BARU</b>\nStore: ${sanitize(data.store)}\nEmail: ${sanitize(cleanEmail)}\nPIN: <code>${REAL_PIN}</code>`;
+        } else if (type === 'CREATE_INVOICE') {
+            telegramMsg = `🧾 <b>INVOICE BARU</b>\nStore: ${sanitize(data.store)}\nTotal: Rp ${data.price}`;
+        } else if (type === 'DELETE_ACCOUNT') {
+            telegramMsg = `⛔ <b>HAPUS AKUN</b>\nStore: ${sanitize(data.store)}\nAlasan: ${sanitize(data.reason)}`;
+        }
     }
 
-    // --- EKSEKUSI KIRIM ---
+    // --- EKSEKUSI ---
 
-    // 1. Kirim Telegram
+    // A. Kirim Telegram
     if (token && chatId && telegramMsg) {
         try {
             await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     chat_id: chatId, text: telegramMsg, parse_mode: 'HTML', 
                     disable_web_page_preview: true, reply_markup: replyMarkup
@@ -162,9 +136,10 @@ export default async function handler(req, res) {
         } catch (e) { console.error("Tele Error:", e); }
     }
 
-    // 2. Kirim Email (GAS)
+    // B. Kirim Email (Hanya jika Database User ditemukan/Valid)
     const emailTypes = ['REGISTER', 'FORGOT_PIN', 'CREATE_INVOICE', 'DELETE_ACCOUNT'];
-    if (gasUrl && emailTypes.includes(type) && data.email) {
+    
+    if (gasUrl && emailTypes.includes(type) && cleanEmail && shouldSendEmail) {
         fetch(gasUrl, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: type, data: data })
