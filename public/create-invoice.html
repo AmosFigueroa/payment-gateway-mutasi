@@ -91,10 +91,19 @@
     </div>
 
     <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
-        <div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3><p class="text-slate-500 text-sm font-medium">Dana akan ditransfer ke rekening Anda.</p></div><div class="space-y-5"><div><label class="input-label">Nominal Penarikan</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span><input type="number" id="wd-amount" class="input-field pl-12 font-mono text-lg" placeholder="0"></div><p class="text-[11px] text-slate-400 mt-1.5 font-medium ml-1">Minimal Rp 50.000</p></div><div class="grid grid-cols-5 gap-4"><div class="col-span-2"><label class="input-label">Bank</label><select id="wd-bank" class="input-field appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.8-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-no-repeat bg-[right_1rem_center] pr-8"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>DANA</option><option>OVO</option><option>GoPay</option></select></div><div class="col-span-3"><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field" placeholder="Contoh: 1234567890"></div></div><div><label class="input-label">Atas Nama Pemilik</label><input type="text" id="wd-name" class="input-field" placeholder="Sesuai buku tabungan"></div></div><div class="grid grid-cols-2 gap-4 mt-8"><button onclick="closeModal('withdraw-modal')" class="btn-sec py-3.5">Batal</button><button onclick="submitWithdraw()" class="btn-main py-3.5 shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700">Kirim Pengajuan</button></div></div>
+        <div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3><p class="text-slate-500 text-sm font-medium">Dana akan ditransfer ke rekening Anda.</p></div>
+        <div class="space-y-5">
+            <div><label class="input-label">Nominal Penarikan</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span><input type="number" id="wd-amount" class="input-field pl-12 font-mono text-lg" placeholder="0"></div><p class="text-[11px] text-slate-400 mt-1.5 font-medium ml-1">Minimal Rp 50.000</p></div>
+            <div><label class="input-label">Email Notifikasi</label><input type="email" id="wd-email" class="input-field" placeholder="Email penerima notifikasi sukses"></div>
+            <div class="grid grid-cols-5 gap-4"><div class="col-span-2"><label class="input-label">Bank</label><select id="wd-bank" class="input-field appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.8-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-no-repeat bg-[right_1rem_center] pr-8"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>DANA</option><option>OVO</option><option>GoPay</option></select></div><div class="col-span-3"><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field" placeholder="Contoh: 1234567890"></div></div><div><label class="input-label">Atas Nama Pemilik</label><input type="text" id="wd-name" class="input-field" placeholder="Sesuai buku tabungan"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-8"><button onclick="closeModal('withdraw-modal')" class="btn-sec py-3.5">Batal</button><button onclick="submitWithdraw()" class="btn-main py-3.5 shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700">Kirim Pengajuan</button></div></div>
     </div>
+
     <div id="register-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('register-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-8 text-center"><div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-indigo-100 text-3xl">📝</div><h3 class="text-2xl font-extrabold text-slate-900 mb-2">Daftar Mitra Baru</h3><p class="text-slate-500 text-sm font-medium px-4">Isi data toko Anda untuk mulai menerima pembayaran.</p></div><div class="space-y-5"><div><label class="input-label">Nama Toko Anda</label><input type="text" id="reg-store" class="input-field" placeholder="Contoh: Kopi Senja"></div><div><label class="input-label">Nomor WhatsApp Aktif</label><input type="text" id="reg-wa" class="input-field" placeholder="Contoh: 0812xxx (Untuk kirim PIN)"></div><div><label class="input-label">Alamat Email</label><input type="email" id="reg-email" class="input-field" placeholder="contoh@email.com"></div></div><button onclick="submitRegister()" class="btn-main w-full py-4 mt-8 text-lg shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700">DAFTAR SEKARANG</button></div></div>
-    <div id="forgot-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box text-center"><button onclick="closeModal('forgot-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-amber-100 text-3xl">🔑</div><h3 class="text-2xl font-extrabold text-slate-900 mb-2">Lupa PIN Login?</h3><p class="text-slate-500 text-sm font-medium mb-8 px-2">Kami akan mengirimkan instruksi reset PIN ke kontak terdaftar Anda.</p><div class="space-y-5 text-left"><div><label class="input-label">Nama Toko</label><input type="text" id="forgot-store" class="input-field" placeholder="Nama toko Anda"></div><div><label class="input-label">Email Terdaftar</label><input type="email" id="forgot-email" class="input-field" placeholder="Email untuk verifikasi"></div><div><label class="input-label">Nomor WhatsApp</label><input type="text" id="forgot-wa" class="input-field" placeholder="0812xxx"></div></div><button onclick="submitForgot()" class="btn-main w-full py-4 mt-8 text-lg bg-slate-800 hover:bg-slate-900">KIRIM PERMINTAAN RESET</button></div></div>
+
+    <div id="forgot-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box text-center"><button onclick="closeModal('forgot-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-amber-100 text-3xl">🔑</div><h3 class="text-2xl font-extrabold text-slate-900 mb-2">Reset PIN</h3><p class="text-slate-500 text-sm font-medium mb-8 px-2">Masukkan alamat email Anda yang terdaftar. Kami akan mengirimkan PIN ke email tersebut.</p><div class="space-y-5 text-left"><div><label class="input-label">Email Terdaftar</label><input type="email" id="forgot-email" class="input-field" placeholder="contoh@email.com"></div></div><button onclick="submitForgot()" class="btn-main w-full py-4 mt-8 text-lg bg-slate-800 hover:bg-slate-900 shadow-xl shadow-slate-900/20">KIRIM KE EMAIL SAYA</button></div></div>
+
     <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('settings-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-8"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">⚙️ Pengaturan Akun</h3><p class="text-slate-500 text-sm font-medium">Kelola keamanan dan data toko.</p></div><div class="mb-8 p-6 bg-slate-50 rounded-3xl border border-slate-200/60"><h4 class="text-sm font-extrabold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Ganti PIN Keamanan</h4><div class="space-y-4"><input type="password" id="set-old-pin" class="input-field text-center tracking-[0.3em] font-bold h-12" placeholder="PIN LAMA" maxlength="6"><input type="password" id="set-new-pin" class="input-field text-center tracking-[0.3em] font-bold h-12 border-indigo-200 focus:border-indigo-500 bg-indigo-50/50" placeholder="PIN BARU" maxlength="6"></div><button onclick="submitChangePin()" class="w-full mt-4 bg-slate-800 text-white py-3 rounded-2xl text-sm font-bold hover:bg-slate-900 transition-all shadow-lg">Update PIN Sekarang</button></div><div class="p-6 bg-red-50/50 rounded-3xl border border-red-100"><h4 class="text-sm font-extrabold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Zona Bahaya</h4><p class="text-xs text-red-400 font-medium mb-4 leading-relaxed">Akun dan seluruh data saldo akan dihapus permanen dan tidak dapat dikembalikan.</p><input type="text" id="del-reason" class="input-field text-sm mb-4 border-red-200 focus:border-red-500 bg-white" placeholder="Tulis alasan penghapusan..."><button onclick="submitDelete()" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-red-500/20">Request Hapus Akun Permanen</button></div></div></div>
     
     <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-8 py-4 rounded-full opacity-0 pointer-events-none transition-all duration-300 text-sm font-bold transform translate-y-10 z-[100] shadow-2xl flex items-center gap-3 border border-white/10"><span id="toast-icon">🔔</span><span id="toast-msg">Notification</span></div>
@@ -115,6 +124,7 @@
             }, 800);
         }
         function logout() { if(confirm("Yakin ingin keluar?")) location.reload(); }
+        
         function openRegister() { document.getElementById('register-modal').classList.remove('hidden'); }
         function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
         function openForgotPin() { document.getElementById('forgot-modal').classList.remove('hidden'); }
@@ -123,56 +133,100 @@
 
         async function sendTelegramNotif(type, data, btnId, loadingText = "Mengirim...") {
             let btn, originalText; if(btnId) { btn = document.querySelector(btnId); originalText = btn.innerText; btn.innerText = loadingText; btn.disabled = true; }
-            try { await fetch('/api/send-notif', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type, data }) }); showToast("Terkirim ke Admin!", "✅"); return true; } 
+            try { await fetch('/api/send-notif', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type, data }) }); showToast("Permintaan berhasil!", "✅"); return true; } 
             catch (e) { showToast("Gagal kirim notifikasi", "⚠️"); return false; } 
             finally { if(btn) { btn.innerText = originalText; btn.disabled = false; } }
         }
 
-        async function submitForgot() { if(await sendTelegramNotif('FORGOT_PIN', { wa: document.getElementById('forgot-wa').value, store: document.getElementById('forgot-store').value, email: document.getElementById('forgot-email').value }, '#forgot-modal .btn-main')) closeModal('forgot-modal'); }
+        // UPDATE: SUBMIT WITHDRAW DENGAN EMAIL
+        async function submitWithdraw() {
+            const amountVal = document.getElementById('wd-amount').value;
+            const amount = parseInt(amountVal);
+            const rek = document.getElementById('wd-rek').value;
+            const name = document.getElementById('wd-name').value;
+            const bank = document.getElementById('wd-bank').value;
+            const store = document.getElementById('storeName').value;
+            const email = document.getElementById('wd-email').value; // Ambil Email
+
+            if(!amountVal || !rek || !name || !email) return showToast("Lengkapi semua data!", "⚠️");
+            if(isNaN(amount) || amount < 50000) return showToast("Minimal Rp 50.000", "⚠️");
+            if(amount > currentBalance) return showToast("Saldo tidak cukup!", "💸");
+            if(!email.includes("@")) return showToast("Email tidak valid!", "⚠️");
+            
+            // Kirim data lengkap ke backend
+            if(await sendTelegramNotif('WITHDRAW', { store, email, amount, bank, rek, name, sisa: currentBalance - amount }, '#withdraw-modal .btn-main')) {
+                currentBalance -= amount;
+                updateBalanceDisplay();
+                closeModal('withdraw-modal');
+                document.getElementById('wd-amount').value = '';
+            }
+        }
+
+        // UPDATE: SUBMIT FORGOT (EMAIL ONLY)
+        async function submitForgot() {
+            const email = document.getElementById('forgot-email').value;
+            if(!email) return showToast("Masukkan alamat email!", "⚠️");
+            if(!email.includes("@")) return showToast("Format email salah!", "⚠️");
+            
+            if(await sendTelegramNotif('FORGOT_PIN', { email: email }, '#forgot-modal .btn-main', "Mengirim Email...")) {
+                 closeModal('forgot-modal');
+                 document.getElementById('forgot-email').value = '';
+                 alert("Permintaan terkirim! Cek Inbox/Spam email Anda.");
+            }
+        }
+
         async function submitChangePin() { if(await sendTelegramNotif('CHANGE_PIN', { store: document.getElementById('storeName').value, oldPin: document.getElementById('set-old-pin').value, newPin: document.getElementById('set-new-pin').value }, '#settings-modal .bg-slate-800')) closeModal('settings-modal'); }
         async function submitDelete() { if(await sendTelegramNotif('DELETE_ACCOUNT', { store: document.getElementById('storeName').value, reason: document.getElementById('del-reason').value }, '#settings-modal .btn-danger')) closeModal('settings-modal'); }
         async function submitRegister() { if(await sendTelegramNotif('REGISTER', { store: document.getElementById('reg-store').value, wa: document.getElementById('reg-wa').value, email: document.getElementById('reg-email').value }, '#register-modal .btn-main')) closeModal('register-modal'); }
-        async function submitWithdraw() { if(await sendTelegramNotif('WITHDRAW', { store: document.getElementById('storeName').value, amount: document.getElementById('wd-amount').value, bank: document.getElementById('wd-bank').value, rek: document.getElementById('wd-rek').value, name: document.getElementById('wd-name').value, sisa: currentBalance - document.getElementById('wd-amount').value }, '#withdraw-modal .btn-main')) closeModal('withdraw-modal'); }
 
-        function addItem() { if (items.length >= MAX_ITEMS) { showToast("Max 10 item!", "✋"); return; } items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); }
+        function updateBalanceDisplay() {
+            const formatted = "Rp " + currentBalance.toLocaleString('id-ID');
+            document.getElementById('wallet-balance').innerText = formatted;
+            document.getElementById('nav-balance').innerText = formatted;
+        }
+
+        // --- ITEM & INVOICE LOGIC ---
+        function addItem() { if (items.length >= MAX_ITEMS) { showToast("Maksimal 10 barang!", "✋"); return; } items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); }
         function removeItem(id) { items = items.filter(i => i.id !== id); renderItems(); }
         function updateItem(id, f, v) { const i = items.find(x => x.id === id); if(i) { f === 'price' ? i.price = parseInt(v.replace(/\D/g, "") || 0) : i.name = v; } renderItems(false); updateTotal(); }
         function renderItems(full = true) {
             document.getElementById('item-count').innerText = `${items.length}/${MAX_ITEMS}`;
-            if(full) document.getElementById('items-wrapper').innerHTML = items.map((i,x) => `<div class="flex gap-3 items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm animate-scaleIn"><span class="text-xs font-bold text-slate-400 w-6 text-center bg-slate-50 rounded-md py-1">${x+1}</span><input type="text" placeholder="Nama Barang" class="input-field flex-1 bg-transparent border-none focus:ring-0 focus:bg-slate-50 px-2 shadow-none rounded-lg" value="${i.name}" oninput="updateItem(${i.id}, 'name', this.value)"><div class="relative w-32"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span><input type="text" placeholder="0" class="input-field pl-8 text-right font-mono bg-transparent border-none focus:ring-0 focus:bg-slate-50 pr-2 shadow-none rounded-lg font-bold text-slate-700" value="${i.price > 0 ? i.price.toLocaleString('id-ID') : ''}" oninput="updateItem(${i.id}, 'price', this.value)"></div><button onclick="removeItem(${i.id})" class="text-slate-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all">✕</button></div>`).join('');
+            if (!full) { updateTotal(); return; }
+            const wrapper = document.getElementById('items-wrapper');
+            wrapper.innerHTML = items.map((i,x) => `<div class="flex gap-3 items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm animate-scaleIn"><span class="text-xs font-bold text-slate-400 w-6 text-center bg-slate-50 rounded-md py-1">${x+1}</span><input type="text" placeholder="Nama Barang" class="input-field flex-1 bg-transparent border-none focus:ring-0 focus:bg-slate-50 px-2 shadow-none rounded-lg" value="${i.name}" oninput="updateItem(${i.id}, 'name', this.value)"><div class="relative w-32"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span><input type="text" placeholder="0" class="input-field pl-8 text-right font-mono bg-transparent border-none focus:ring-0 focus:bg-slate-50 pr-2 shadow-none rounded-lg font-bold text-slate-700" value="${i.price > 0 ? i.price.toLocaleString('id-ID') : ''}" oninput="updateItem(${i.id}, 'price', this.value)"></div><button onclick="removeItem(${i.id})" class="text-slate-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all">✕</button></div>`).join('');
+            if(items.length === 0) wrapper.innerHTML = '<p class="text-center text-sm text-slate-400 py-4 italic">Belum ada barang ditambahkan.</p>';
             updateTotal();
         }
         function updateTotal() { document.getElementById('total-display').innerText = "Rp " + items.reduce((s, i) => s + (i.price || 0), 0).toLocaleString('id-ID'); }
-        
         function generateLink() {
             const wa = document.getElementById('custWa').value;
             const email = document.getElementById('custEmail').value;
-            if(!wa || !email || items.length === 0) return showToast("Data belum lengkap!", "⚠️");
+            if(!wa || !email) { showToast("WA & Email Pelanggan Wajib Diisi!", "⚠️"); return; }
+            if(items.length === 0 || items[0].price === 0) { showToast("Masukkan minimal 1 barang & harga!", "⚠️"); return; }
             const total = items.reduce((s, i) => s + (i.price || 0), 0);
             const itemsEncoded = btoa(JSON.stringify(items.map(i => ({n: i.name, p: i.price}))));
-            const params = new URLSearchParams({
-                store: document.getElementById('storeName').value,
-                price: total,
-                items: itemsEncoded,
-                prod: items.length + " Items",
-                ref_id: "INV-" + Date.now(),
-                wa: wa, email: email,
-                time: document.getElementById('timer').value
-            });
+            const params = new URLSearchParams({ store: document.getElementById('storeName').value, price: total, items: itemsEncoded, prod: items.length + " Items", ref_id: "INV-" + Date.now(), wa: wa, email: email, time: document.getElementById('timer').value });
             document.getElementById('resultUrl').value = `${BASE_URL}?${params.toString()}`;
             document.getElementById('result-area').classList.remove('hidden');
             document.getElementById('result-area').scrollIntoView({behavior: "smooth"});
-            showToast("Link Berhasil!", "✨");
+            showToast("Link Invoice Berhasil Dibuat!", "✨");
         }
-        
-        function copyLink() { document.getElementById("resultUrl").select(); document.execCommand('copy'); showToast("Disalin!", "📋"); }
+        function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Link disalin!", "📋"); }
         function shareWa() { 
             const url = document.getElementById("resultUrl").value;
+            if(!url) return showToast("Buat link dulu!", "⚠️");
             const total = items.reduce((s, i) => s + (i.price || 0), 0);
-            const list = items.map(i => `- ${i.name} (Rp ${i.price.toLocaleString('id-ID')})`).join('%0A');
-            window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Halo%20Kak%2C%0A%0ABerikut%20invoice%20pesanan%20Anda%3A%0A%0A${list}%0A%0ATotal%3A%20*Rp%20${total.toLocaleString('id-ID')}*%0A%0ABayar%20di%20sini%3A%0A${url}`, '_blank');
+            let list = items.map(i => `- ${i.name} (Rp ${i.price.toLocaleString('id-ID')})`).join('%0A');
+            window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Halo%20Kak%2C%0A%0ABerikut%20pesanan%20Anda%3A%0A${list}%0A%0ATotal%3A%20*Rp%20${total.toLocaleString('id-ID')}*%0A%0ABayar%20di%20sini%3A%0A${url}`, '_blank');
         }
-        function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
+        function showToast(msg, icon="🔔") {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon;
+            t.classList.remove('opacity-0', 'translate-y-10');
+            setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000);
+        }
+        updateBalanceDisplay();
     </script>
 </body>
 </html>
