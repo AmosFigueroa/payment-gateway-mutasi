@@ -40,7 +40,7 @@
         .dropdown-open { opacity: 1; transform: scaleY(1); max-height: 300px; }
         .dropdown-closed { opacity: 0; transform: scaleY(0.9); max-height: 0; pointer-events: none; }
         
-        /* QRIS Official Pattern */
+        /* QRIS Pattern Background for Web */
         .qris-pattern {
             background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
             background-size: 12px 12px;
@@ -105,7 +105,7 @@
             { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
             { id: 'seabank', name: 'SeaBank', logo: 'https://i.ibb.co.com/wr7QqTcx/image.png' },
             { id: 'jago', name: 'Bank Jago', logo: 'https://i.ibb.co.com/tMdwhc2v/logo-color-3719629472.png' },
-            { id: 'neobank', name: 'Neo Bank', logo: 'https://i.ibb.co.com/zy1HFLp/image.png' }
+            { id: 'neobank', name: 'Neo Bank', logo: 'https://i.ibb.co.com/WWB7ZSwK/image.png' }
         ];
 
         let state = { 
@@ -117,7 +117,8 @@
             selectedMethod: 'qris', 
             productName: "Produk", 
             timeoutMinutes: 60, 
-            refId: "" 
+            refId: "",
+            activeQrisData: null // Menyimpan data QRIS untuk download
         };
 
         const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -270,7 +271,20 @@
                 const data = { product_name: state.productName, price: state.totalAmount, customer_contact: document.getElementById('customerWa').value, customer_email: document.getElementById('customerEmail').value, method: state.selectedMethod, ref_id: state.refId, notify_url: state.notifyUrl };
                 const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                 const d = await res.json();
-                if(d.status === 'success') { state.totalAmount = d.total_pay; renderStep2(d); } 
+                if(d.status === 'success') { 
+                    state.totalAmount = d.total_pay; 
+                    
+                    // SIMPAN DATA QRIS UNTUK DOWNLOADER
+                    if(d.qris_meta) {
+                        state.activeQrisData = {
+                            image: d.qr_image,
+                            name: d.qris_meta.name,
+                            nmid: d.qris_meta.nmid
+                        };
+                    }
+                    
+                    renderStep2(d); 
+                } 
                 else { showAlert("Gagal", d.error || "Gagal memproses pesanan."); renderStep1(); }
             } catch(e) { showAlert("Koneksi Error", "Cek koneksi internet Anda."); renderStep1(); }
         }
@@ -313,12 +327,12 @@
                 instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
             } else {
                 
-                // --- BAGIAN INI MENAMPILKAN DATA AUTO-DETECT DARI BACKEND ---
+                // DATA AUTO-DETECT
                 const merchantName = apiData.qris_meta?.name || "Merchant QRIS";
                 const merchantNMID = apiData.qris_meta?.nmid || "-";
 
                 paymentDisplay = `
-                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-6 w-full max-w-[280px] overflow-hidden transform transition-all hover:scale-[1.02]">
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-4 w-full max-w-[280px] overflow-hidden transform transition-all hover:scale-[1.02]">
                         <div class="bg-[#bf1e2e] p-3 flex items-center justify-between relative overflow-hidden">
                             <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 brightness-0 invert relative z-10">
@@ -334,6 +348,11 @@
                             <p class="text-[9px] text-slate-400 mt-3 font-medium">Dicetak oleh: GoPay</p>
                         </div>
                     </div>
+
+                    <button onclick="downloadQris()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-600 font-bold py-2 px-4 rounded-xl border border-slate-200 text-xs shadow-sm mb-6 transition-all active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        SIMPAN GAMBAR QRIS
+                    </button>
 
                     <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p>
                     <div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="cursor-pointer group flex items-center gap-2">
@@ -357,6 +376,69 @@
             
             startTimer(state.timeoutMinutes * 60);
             startCheckingStatus(apiData.order_id);
+        }
+
+        // --- FUNGSI GENERATE GAMBAR QRIS (CANVAS) ---
+        async function downloadQris() {
+            if (!state.activeQrisData) return;
+
+            const { image, name, nmid } = state.activeQrisData;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set Ukuran Canvas (Resolusi Tinggi)
+            canvas.width = 400;
+            canvas.height = 600;
+
+            // 1. Background Putih
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Header Merah
+            ctx.fillStyle = '#bf1e2e';
+            ctx.fillRect(0, 0, canvas.width, 80);
+
+            // 3. Teks Header (QRIS & National Standard)
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 36px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('QRIS', 25, 55); // Simulasi Logo QRIS Teks
+            
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('National Standard', canvas.width - 25, 48);
+
+            // 4. Nama Merchant & NMID
+            ctx.fillStyle = '#1e293b'; // Warna Slate-800
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(name.toUpperCase(), canvas.width / 2, 130);
+
+            ctx.fillStyle = '#64748b'; // Warna Slate-500
+            ctx.font = '14px monospace';
+            ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
+
+            // 5. Gambar QR Code
+            const qrImg = new Image();
+            qrImg.src = image;
+            
+            qrImg.onload = () => {
+                // Draw QR Code Center
+                const qrSize = 300;
+                const xPos = (canvas.width - qrSize) / 2;
+                ctx.drawImage(qrImg, xPos, 190, qrSize, qrSize);
+
+                // 6. Footer Text
+                ctx.fillStyle = '#94a3b8'; // Slate-400
+                ctx.font = '12px sans-serif';
+                ctx.fillText('Dicetak oleh: GoPay', canvas.width / 2, 530);
+
+                // 7. Trigger Download
+                const link = document.createElement('a');
+                link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
         }
 
         // --- TIMER & STATUS CHECKER ---
