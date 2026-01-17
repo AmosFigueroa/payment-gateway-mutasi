@@ -40,10 +40,10 @@
         .dropdown-open { opacity: 1; transform: scaleY(1); max-height: 300px; }
         .dropdown-closed { opacity: 0; transform: scaleY(0.9); max-height: 0; pointer-events: none; }
         
-        /* QRIS Pattern Background */
+        /* QRIS Official Pattern */
         .qris-pattern {
             background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-            background-size: 10px 10px;
+            background-size: 12px 12px;
         }
     </style>
 </head>
@@ -312,20 +312,26 @@
                     </div>`;
                 instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
             } else {
+                
+                // --- BAGIAN INI MENAMPILKAN DATA AUTO-DETECT DARI BACKEND ---
+                const merchantName = apiData.qris_meta?.name || "Merchant QRIS";
+                const merchantNMID = apiData.qris_meta?.nmid || "-";
+
                 paymentDisplay = `
-                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-6 w-full max-w-[280px] overflow-hidden">
-                        <div class="bg-[#bf1e2e] p-3 flex items-center justify-between">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 brightness-0 invert">
-                            <span class="text-white font-bold text-[10px] tracking-wider">National Standard</span>
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-6 w-full max-w-[280px] overflow-hidden transform transition-all hover:scale-[1.02]">
+                        <div class="bg-[#bf1e2e] p-3 flex items-center justify-between relative overflow-hidden">
+                            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 brightness-0 invert relative z-10">
+                            <span class="text-white font-bold text-[10px] tracking-wider relative z-10">National Standard</span>
                         </div>
                         
                         <div class="p-5 flex flex-col items-center text-center qris-pattern bg-white">
-                            <h3 class="font-bold text-slate-900 text-lg uppercase leading-tight mb-1">WAGO SHOESPA CUCI SEPATU</h3>
-                            <p class="text-[10px] text-slate-500 mb-4 font-mono">NMID: ID1024363913731</p>
+                            <h3 class="font-bold text-slate-900 text-lg uppercase leading-tight mb-1 tracking-tight">${merchantName}</h3>
+                            <p class="text-[10px] text-slate-500 mb-4 font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">NMID: ${merchantNMID}</p>
                             
-                            <img src="${apiData.qr_image}" class="w-full aspect-square object-contain border-2 border-slate-900 rounded-lg p-1 bg-white">
+                            <img src="${apiData.qr_image}" class="w-full aspect-square object-contain border-2 border-slate-900 rounded-lg p-1 bg-white shadow-sm">
                             
-                            <p class="text-[9px] text-slate-400 mt-3">Dicetak oleh: GoPay</p>
+                            <p class="text-[9px] text-slate-400 mt-3 font-medium">Dicetak oleh: GoPay</p>
                         </div>
                     </div>
 
