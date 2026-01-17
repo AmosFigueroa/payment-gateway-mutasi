@@ -56,6 +56,7 @@ export default async function handler(req, res) {
     seabank: "901168080844 a.n Wago Payment",
     bni: "1868174575 a.n Wago Payment",
     jago: "100356111569 a.n Wago Payment",
+    neobank: "5859459402765464 a.n Wago Payment",
   };
 
   try {
