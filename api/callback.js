@@ -1,11 +1,14 @@
 import mongoose from 'mongoose';
 
-// --- KONEKSI DATABASE (Sama dengan checkout.js) ---
 const MONGODB_URI = process.env.MONGODB_URI;
+const TELE_TOKEN = process.env.TELE_TOKEN;
+const TELE_CHAT_ID = process.env.TELE_CHAT_ID;
 
+// Schema Database (Pastikan sama dengan checkout)
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   ref_id: String,
+  store_name: String, // Menambahkan field nama toko
   notify_url: String,
   product_name: String,
   customer_contact: String,
@@ -21,7 +24,7 @@ const OrderSchema = new mongoose.Schema({
 const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 
 export default async function handler(req, res) {
-  // Izinkan method POST (dari jasa mutasi) dan GET (untuk tes manual Anda)
+  // Hanya izinkan POST (dari Mutasi) & GET (Test Manual)
   if (req.method !== 'POST' && req.method !== 'GET') {
       return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -31,24 +34,20 @@ export default async function handler(req, res) {
       await mongoose.connect(MONGODB_URI);
     }
 
-    // 1. TANGKAP DATA (Support berbagai format)
-    // Bisa dari Query URL (?amount=50123) atau Body JSON ({ amount: 50123 })
+    // 1. TANGKAP NOMINAL
     let amountReceived = 0;
-    
     if (req.method === 'GET') {
         amountReceived = parseInt(req.query.amount);
     } else {
-        // Logika untuk menangkap data dari Body (sesuaikan dengan jasa mutasi yang dipakai)
-        // Contoh umum: req.body.amount, req.body.data.amount, dll.
-        amountReceived = parseInt(req.body.amount || req.body.nominal || 0);
+        // Support berbagai format JSON dari layanan mutasi
+        amountReceived = parseInt(req.body.amount || req.body.nominal || req.body.data?.amount || 0);
     }
 
     if (!amountReceived) {
-        return res.status(400).json({ error: 'Nominal (amount) tidak ditemukan/nol.' });
+        return res.status(400).json({ error: 'Nominal tidak ditemukan.' });
     }
 
-    // 2. CARI ORDER BERDASARKAN TOTAL BAYAR (KODE UNIK)
-    // Mencari order UNPAID yang total bayarnya cocok persis
+    // 2. CARI ORDER (Cari yang UNPAID & Nominal Cocok)
     const order = await Order.findOne({ 
         total_pay: amountReceived, 
         status: 'UNPAID' 
@@ -57,7 +56,7 @@ export default async function handler(req, res) {
     if (!order) {
         return res.status(404).json({ 
             error: 'Order tidak ditemukan atau sudah lunas.', 
-            amount_searched: amountReceived 
+            amount_recieved: amountReceived 
         });
     }
 
@@ -65,44 +64,67 @@ export default async function handler(req, res) {
     order.status = 'PAID';
     await order.save();
 
-    // 4. KIRIM WEBHOOK KE WEBSITE TOKO (AUTO NOTIF)
-    let webhookResult = "Skipped (No URL)";
+    // 4. KIRIM WEBHOOK KE TOKO USER (Opsional)
+    let webhookResult = "No Webhook URL";
     if (order.notify_url && order.notify_url !== "-") {
-        console.log(`Mengirim Notifikasi Lunas ke: ${order.notify_url}`);
-        
-        const payload = {
-            status: 'success',
-            event: 'PAYMENT_PAID',
-            order_id: order.order_id,
-            ref_id: order.ref_id,
-            total_pay: order.total_pay,
-            product_name: order.product_name,
-            paid_at: new Date().toISOString()
-        };
-
         try {
             await fetch(order.notify_url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    status: 'success',
+                    event: 'PAYMENT_PAID',
+                    order_id: order.order_id,
+                    ref_id: order.ref_id,
+                    total_pay: order.total_pay,
+                    product_name: order.product_name,
+                    paid_at: new Date().toISOString()
+                })
             });
-            webhookResult = "Sent Successfully";
+            webhookResult = "Sent Success";
         } catch (err) {
             webhookResult = "Failed: " + err.message;
         }
     }
 
-    // 5. SELESAI
+    // 5. [BARU] KIRIM NOTIFIKASI KE TELEGRAM ADMIN
+    if (TELE_TOKEN && TELE_CHAT_ID) {
+        const message = `
+<b>💰 PEMBAYARAN DITERIMA (LUNAS)</b>
+--------------------------------
+<b>Toko:</b> ${order.store_name || 'Merchant'}
+<b>Produk:</b> ${order.product_name}
+<b>Total:</b> Rp ${order.total_pay.toLocaleString('id-ID')}
+<b>Ref ID:</b> ${order.ref_id}
+<b>Metode:</b> ${order.method === 'qris' ? 'QRIS' : 'Bank Transfer'}
+--------------------------------
+<i>Status berhasil diupdate otomatis.</i>
+`;
+        try {
+            await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELE_CHAT_ID,
+                    text: message,
+                    parse_mode: 'HTML'
+                })
+            });
+        } catch (e) {
+            console.error("Gagal kirim Telegram:", e);
+        }
+    }
+
+    // 6. SELESAI
     return res.status(200).json({
         status: 'success',
-        message: 'Pembayaran berhasil diverifikasi otomatis',
+        message: 'Pembayaran diverifikasi & Notifikasi terkirim',
         order_id: order.order_id,
-        amount_matched: amountReceived,
-        webhook_status: webhookResult
+        amount: amountReceived
     });
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Server Error: ' + error.message });
+    return res.status(500).json({ error: error.message });
   }
 }
