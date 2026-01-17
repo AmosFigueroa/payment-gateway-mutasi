@@ -1,93 +1,53 @@
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).end();
+    if (req.method !== 'GET') return res.status(405).send("Method Not Allowed");
 
-    const { type, data } = req.body;
-    
-    // KONFIGURASI ENV
-    const token = process.env.TELE_TOKEN;
-    const chatId = process.env.TELE_CHAT_ID;
+    const { data } = req.query; // Ambil data terenkripsi dari Link
     const gasUrl = process.env.GAS_EMAIL_URL;
 
-    const formatWa = (num) => num ? num.replace(/^0/, '62').replace(/[^0-9]/g, '') : "";
+    if (!data || !gasUrl) return res.status(400).send("Invalid Link or Config");
 
-    // PIN DEFAULT (Sesuaikan dengan yang ada di create-invoice.html)
-    const DEFAULT_PIN = "123456"; 
+    try {
+        // 1. Decode Data (Base64 -> JSON)
+        const jsonStr = Buffer.from(data, 'base64').toString('utf-8');
+        const withdrawData = JSON.parse(jsonStr);
 
-    // --- 1. SUSUN PESAN TELEGRAM ---
-    let telegramMsg = "";
-    
-    if (type === 'REGISTER') {
-        const waLink = `https://wa.me/${formatWa(data.wa)}?text=Halo+${encodeURIComponent(data.store)}+%2C+pendaftaran+Anda+diterima.+Berikut+PIN+Akses+Anda%3A+${DEFAULT_PIN}`;
-        
-        telegramMsg = `
-<b>🆕 PENDAFTARAN MITRA BARU</b>
---------------------------------
-<b>Toko:</b> ${data.store}
-<b>WA:</b> ${data.wa}
-<b>Email:</b> ${data.email}
+        // 2. Panggil Google Script untuk Kirim Email ke User
+        await fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'WITHDRAW_SUCCESS', 
+                data: withdrawData 
+            })
+        });
 
-🔐 <b>PIN AKSES USER:</b> <code>${DEFAULT_PIN}</code>
+        // 3. Tampilkan Halaman Sukses ke Admin
+        res.setHeader('Content-Type', 'text/html');
+        return res.status(200).send(`
+            <html>
+            <head>
+                <title>Sukses</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body { font-family: sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
+                    .card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 90%; }
+                    h1 { color: #34d399; margin-bottom: 10px; }
+                    p { color: #94a3b8; }
+                    .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #334155; color: white; text-decoration: none; border-radius: 10px; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h1>✅ Berhasil!</h1>
+                    <p>Status pencairan <b>${withdrawData.store}</b> telah diupdate.</p>
+                    <p>Email notifikasi "Sukses Cair" telah dikirim ke user.</p>
+                    <a href="javascript:window.close()" class="btn">Tutup Window</a>
+                </div>
+            </body>
+            </html>
+        `);
 
-👇 <b>TINDAKAN ADMIN:</b>
-<a href="${waLink}">➡️ Klik untuk Kirim PIN via WA</a>`;
-    } 
-    
-    else if (type === 'FORGOT_PIN') {
-        const waLink = `https://wa.me/${formatWa(data.wa)}?text=Halo+${encodeURIComponent(data.store)}%2C+Permintaan+Reset+PIN+diterima.+Silakan+gunakan+PIN+Default+ini%3A+${DEFAULT_PIN}`;
-        
-        telegramMsg = `
-<b>🔑 USER LUPA PIN</b>
---------------------------------
-<b>Toko:</b> ${data.store}
-<b>WA:</b> ${data.wa}
-
-🔐 <b>BERIKAN PIN INI:</b> <code>${DEFAULT_PIN}</code>
-
-👇 <b>TINDAKAN ADMIN:</b>
-<a href="${waLink}">➡️ Balas PIN ke User</a>`;
+    } catch (error) {
+        return res.status(500).send("Terjadi Kesalahan: " + error.message);
     }
-
-    else if (type === 'WITHDRAW') {
-        telegramMsg = `<b>💸 REQUEST CAIR SALDO</b>\n----------------\n<b>Toko:</b> ${data.store}\n<b>Rp ${parseInt(data.amount).toLocaleString('id-ID')}</b>\nKe: ${data.bank} - ${data.rek}\nA.N: ${data.name}\n\nSisa Saldo: Rp ${parseInt(data.sisa).toLocaleString('id-ID')}`;
-    }
-    
-    else if (type === 'DELETE_ACCOUNT') {
-        telegramMsg = `<b>⛔ HAPUS AKUN</b>\n----------------\n<b>Toko:</b> ${data.store}\n<b>Alasan:</b> ${data.reason}\n\n<i>Hubungi user untuk konfirmasi.</i>`;
-    }
-    
-    else if (type === 'CHANGE_PIN') {
-        telegramMsg = `<b>🔄 USER GANTI PIN</b>\n----------------\n<b>Toko:</b> ${data.store}\nLama: <code>${data.oldPin}</code>\nBaru: <code>${data.newPin}</code>\n\n<i>Catat PIN baru ini manual.</i>`;
-    }
-
-    // --- 2. EKSEKUSI PENGIRIMAN ---
-
-    // A. Kirim Telegram
-    if (token && chatId && telegramMsg) {
-        try {
-            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    chat_id: chatId, 
-                    text: telegramMsg, 
-                    parse_mode: 'HTML',
-                    disable_web_page_preview: true
-                })
-            });
-        } catch (e) { console.error("Tele Error:", e); }
-    }
-
-    // B. Kirim Email (GAS)
-    const emailTypes = ['REGISTER', 'FORGOT_PIN', 'DELETE_ACCOUNT', 'CHANGE_PIN'];
-    if (gasUrl && emailTypes.includes(type) && data.email) {
-        try {
-            await fetch(gasUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: type, data: data })
-            });
-        } catch (e) { console.error("GAS Email Error:", e); }
-    }
-
-    return res.status(200).json({ status: 'sent' });
 }
