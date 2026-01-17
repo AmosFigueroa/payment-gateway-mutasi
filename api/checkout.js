@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// UPDATE SCHEMA: Tambahkan 'merchant_email' & 'store_name' agar saldo jalan
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   ref_id: String,
@@ -10,6 +11,8 @@ const OrderSchema = new mongoose.Schema({
   product_name: String,
   customer_contact: String,
   customer_email: String,
+  merchant_email: String, // <--- WAJIB ADA (Untuk Saldo)
+  store_name: String,     // <--- WAJIB ADA (Untuk Laporan)
   amount_original: Number,
   unique_code: Number,
   total_pay: Number,
@@ -21,7 +24,7 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 
-// --- HELPER 1: CRC16 (Untuk Dynamic QRIS) ---
+// --- HELPER 1: CRC16 (JANGAN DIUBAH) ---
 function crc16(str) {
   let crc = 0xFFFF;
   for (let i = 0; i < str.length; i++) {
@@ -35,7 +38,7 @@ function crc16(str) {
   return hex.padStart(4, '0');
 }
 
-// --- HELPER 2: Generate Dynamic String ---
+// --- HELPER 2: Generate Dynamic String (JANGAN DIUBAH) ---
 function convertToDynamic(qrisRaw, amount) {
   let amountStr = amount.toString();
   let tag54 = "54" + amountStr.length.toString().padStart(2, '0') + amountStr;
@@ -47,10 +50,10 @@ function convertToDynamic(qrisRaw, amount) {
   return newString + crc16(newString);
 }
 
-// --- HELPER 3: PARSE DATA DARI STRING QRIS (AUTO DETECT) ---
+// --- HELPER 3: PARSE DATA (JANGAN DIUBAH) ---
 function parseQrisData(qrisStr) {
     let i = 0;
-    let name = "MERCHANT QRIS"; // Default
+    let name = "MERCHANT QRIS"; 
     let nmid = "-";
     
     try {
@@ -59,30 +62,27 @@ function parseQrisData(qrisStr) {
             const len = parseInt(qrisStr.substr(i + 2, 2));
             const val = qrisStr.substr(i + 4, len);
 
-            if (id === '59') { // Tag 59: Merchant Name
-                name = val;
-            }
-            if (id === '51') { // Tag 51: Merchant Account Info (NMID biasanya disini)
+            if (id === '59') name = val;
+            if (id === '51') {
                 let j = 0;
                 while (j < val.length) {
                     const subId = val.substr(j, 2);
                     const subLen = parseInt(val.substr(j + 2, 2));
                     const subVal = val.substr(j + 4, subLen);
-                    if (subId === '02') nmid = subVal; // Subtag 02: NMID
+                    if (subId === '02') nmid = subVal;
                     j += 4 + subLen;
                 }
             }
             i += 4 + len;
         }
     } catch (e) { console.log("Error parsing QRIS", e); }
-    
     return { name, nmid };
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // --- SETTING DATA REKENING ---
+  // --- DATA REKENING UTAMA ---
   const DATA_PAYMENT = {
     qris: "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204899953033605802ID5922Wago Digital Solutions6006SLEMAN61055529462070703A016304C0F0", 
     bcava: "70001085171592306 a.n Wago Payment",
@@ -97,7 +97,9 @@ export default async function handler(req, res) {
       await mongoose.connect(MONGODB_URI);
     }
 
-    const { product_name, price, customer_contact, customer_email, method, ref_id, notify_url } = req.body;
+    // UPDATE: Ambil merchant_email & store_name dari Request
+    const { product_name, price, customer_contact, customer_email, method, ref_id, notify_url, merchant_email, store_name } = req.body;
+    
     let selectedMethod = method || 'qris';
     const nominal = parseInt(price);
 
@@ -111,16 +113,12 @@ export default async function handler(req, res) {
     let qrImage = null;
     let accNo = "";
     let accName = "";
-    let qrisDetails = { name: "", nmid: "" }; // Var baru untuk dikirim ke frontend
+    let qrisDetails = { name: "", nmid: "" };
 
     if (selectedMethod === 'qris') {
-      // 1. Generate QR Image
       const dynamicQris = convertToDynamic(DATA_PAYMENT.qris, totalPay);
       qrImage = await QRCode.toDataURL(dynamicQris);
-      
-      // 2. Auto Detect Name & NMID from String
       qrisDetails = parseQrisData(DATA_PAYMENT.qris); 
-
     } else {
       if(DATA_PAYMENT[selectedMethod]) {
           const rawInfo = DATA_PAYMENT[selectedMethod];
@@ -134,6 +132,7 @@ export default async function handler(req, res) {
 
     const webhookTarget = notify_url || process.env.STORE_WEBHOOK_URL || "-";
 
+    // SIMPAN KE DATABASE (LENGKAP DENGAN MERCHANT EMAIL)
     const newOrder = await Order.create({
       order_id: "ORD-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
       ref_id: ref_id || "-",
@@ -141,6 +140,8 @@ export default async function handler(req, res) {
       product_name: product_name,
       customer_contact: customer_contact,
       customer_email: customer_email,
+      merchant_email: merchant_email, // <--- PENTING: Agar callback tau ini punya siapa
+      store_name: store_name || "Wago Store",
       amount_original: nominal,
       unique_code: uniqueCode,
       total_pay: totalPay,
@@ -154,7 +155,6 @@ export default async function handler(req, res) {
       order_id: newOrder.order_id,
       total_pay: totalPay,
       qr_image: qrImage,
-      // Kirim Data Hasil Auto-Detect
       qris_meta: qrisDetails, 
       payment_details: {
           type: selectedMethod === 'qris' ? 'qris' : 'bank',
