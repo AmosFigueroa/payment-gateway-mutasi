@@ -81,9 +81,11 @@
                     <div class="flex justify-between items-center mb-8"><div><h3 class="text-2xl font-extrabold text-slate-900">Buat Invoice</h3><p class="text-slate-500 text-sm font-medium">Link pembayaran otomatis</p></div><span class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full font-extrabold border border-indigo-100">Max 10 Items</span></div>
                     
                     <div class="bg-slate-50 rounded-3xl p-6 mb-6 border border-slate-200/60">
-                        <div class="flex justify-between mb-4 items-center"><label class="input-label mb-0">Daftar Barang</label><span id="item-count" class="text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200">0/10</span></div>
-                        <div id="items-wrapper" class="space-y-3 mb-4 min-h-[50px]"></div>
-                        <button onclick="addItem()" class="w-full py-3 bg-white border-2 border-dashed border-indigo-200 text-indigo-500 rounded-2xl text-sm font-bold hover:bg-indigo-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>Tambah Barang</button>
+                        <div class="flex justify-between mb-4 items-center"><label class="input-label mb-0">Rincian Produk & Harga</label><span id="item-count" class="text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200">0/10</span></div>
+                        
+                        <div id="items-wrapper" class="space-y-4 mb-4 min-h-[50px]"></div>
+
+                        <button onclick="addItem()" class="w-full py-3 bg-white border-2 border-dashed border-indigo-200 text-indigo-500 rounded-2xl text-sm font-bold hover:bg-indigo-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2 mt-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>Tambah Baris Barang</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-end">
@@ -126,7 +128,7 @@
     <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3></div>
         <div class="space-y-4">
-            <div><label class="input-label">Nominal</label><input type="number" id="wd-amount" class="input-field" placeholder="Min 50.000"></div>
+            <div><label class="input-label">Nominal</label><input type="number" id="wd-amount" class="input-field" placeholder="Min 10.000"></div>
             <div><label class="input-label">Bank</label><select id="wd-bank" class="input-field"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>DANA</option><option>GoPay</option></select></div>
             <div><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field"></div>
             <div><label class="input-label">Atas Nama</label><input type="text" id="wd-name" class="input-field"></div>
@@ -143,12 +145,8 @@
         let items = []; 
         let currentUser = null; 
 
-        // --- AUTH SYSTEM (DATABASE) ---
-
-        function toggleRegister(show) {
-            document.getElementById('login-overlay').classList.toggle('hidden', show);
-            document.getElementById('register-overlay').classList.toggle('hidden', !show);
-        }
+        // --- AUTH SYSTEM ---
+        function toggleRegister(show) { document.getElementById('login-overlay').classList.toggle('hidden', show); document.getElementById('register-overlay').classList.toggle('hidden', !show); }
 
         async function doRegister() {
             const store = document.getElementById('reg-store').value;
@@ -158,26 +156,14 @@
             const btn = document.querySelector('#register-overlay button.btn-main');
 
             if(!store || !email || !pin) return showToast("Lengkapi semua data!", "⚠️");
-
             btn.innerText = "MENDAFTAR..."; btn.disabled = true;
             try {
-                const res = await fetch('/api/user', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'register', store, email, wa, pin })
-                });
+                const res = await fetch('/api/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'register', store, email, wa, pin }) });
                 const data = await res.json();
-                
                 if(res.ok) {
-                    await fetch('/api/send-notif', { 
-                        method:'POST', headers:{'Content-Type':'application/json'}, 
-                        body: JSON.stringify({ type:'REGISTER', data: {store, email, wa} }) 
-                    });
-                    
-                    showToast("Berhasil! Cek Email untuk PIN.", "✅");
-                    toggleRegister(false);
-                } else {
-                    showToast(data.error, "❌");
-                }
+                    await fetch('/api/send-notif', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'REGISTER', data: {store, email, wa} }) });
+                    showToast("Berhasil! Cek Email untuk PIN.", "✅"); toggleRegister(false);
+                } else { showToast(data.error, "❌"); }
             } catch(e) { showToast("Gagal terhubung ke server", "⚠️"); }
             btn.innerText = "DAFTAR SEKARANG"; btn.disabled = false;
         }
@@ -188,24 +174,16 @@
             const btn = document.querySelector('#login-overlay button.btn-main');
 
             if(!email || !pin) return showToast("Isi Email & PIN!", "⚠️");
-
             btn.innerText = "MEMVERIFIKASI..."; btn.disabled = true;
             try {
-                const res = await fetch('/api/user', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, pin })
-                });
+                const res = await fetch('/api/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'login', email, pin }) });
                 const resp = await res.json();
-
                 if(res.ok) {
                     currentUser = resp.data; 
                     document.getElementById('login-overlay').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
-                    updateUI();
-                    showToast("Login Berhasil!", "✅");
-                } else {
-                    showToast(resp.error, "❌");
-                }
+                    updateUI(); showToast("Login Berhasil!", "✅");
+                } else { showToast(resp.error, "❌"); }
             } catch(e) { showToast("Gagal login: " + e.message, "⚠️"); }
             btn.innerText = "MASUK DASHBOARD"; btn.disabled = false;
         }
@@ -222,44 +200,78 @@
             const btn = document.querySelector('nav button[title="Refresh Saldo"]');
             btn.classList.add('animate-spin');
             try {
-                const res = await fetch('/api/user', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'check_balance', email: currentUser.email })
-                });
+                const res = await fetch('/api/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'check_balance', email: currentUser.email }) });
                 const data = await res.json();
-                if(data.balance !== undefined) {
-                    currentUser.balance = data.balance;
-                    updateUI();
-                    showToast("Saldo diperbarui", "💰");
-                }
+                if(data.balance !== undefined) { currentUser.balance = data.balance; updateUI(); showToast("Saldo diperbarui", "💰"); }
             } catch(e) {}
             setTimeout(() => btn.classList.remove('animate-spin'), 1000);
         }
 
-        function logout() {
-            if(confirm("Keluar dari akun?")) {
-                currentUser = null;
-                location.reload();
-            }
-        }
+        function logout() { if(confirm("Keluar dari akun?")) { currentUser = null; location.reload(); } }
 
-        // --- INVOICE LOGIC ---
+        // --- INVOICE LOGIC (UI DIPERBAIKI) ---
         function addItem() { 
             if (items.length >= 10) return showToast("Maksimal 10 barang!", "✋"); 
             items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); 
         }
-        function updateItem(id, f, v) { 
+
+        function updateItem(id, field, value) { 
             const i = items.find(x => x.id === id); 
-            if(i) { f === 'price' ? i.price = parseInt(v.replace(/\D/g, "") || 0) : i.name = v; } 
-            renderItems(false); 
+            if(i) { 
+                if(field === 'price') {
+                    // Hapus titik untuk ambil angka murni
+                    let rawVal = parseInt(value.replace(/\./g, "") || 0);
+                    i.price = rawVal;
+                } else {
+                    i.name = value; 
+                }
+            } 
+            renderItems(false); // Render ulang tanpa reset fokus total
         }
+
+        // FUNGSI FORMAT RUPIAH SAAT KETIK (REDENOMINAL)
+        function formatCurrencyInput(input) {
+            let value = input.value.replace(/\D/g, ""); // Hapus non-angka
+            if(value === "") { input.value = ""; return; }
+            let formatted = parseInt(value).toLocaleString('id-ID'); // Tambah titik
+            input.value = formatted;
+        }
+
         function renderItems(full = true) {
             document.getElementById('item-count').innerText = `${items.length}/10`;
             document.getElementById('total-display').innerText = "Rp " + items.reduce((s, i) => s + (i.price || 0), 0).toLocaleString('id-ID');
             if (!full) return;
+
             const wrapper = document.getElementById('items-wrapper');
-            wrapper.innerHTML = items.map((i,x) => `<div class="flex gap-3 items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm"><span class="text-xs font-bold text-slate-400 w-6 text-center">${x+1}</span><input type="text" placeholder="Nama Barang" class="input-field flex-1 bg-transparent border-none px-2 shadow-none" value="${i.name}" oninput="updateItem(${i.id}, 'name', this.value)"><input type="text" placeholder="0" class="input-field w-24 text-right bg-transparent border-none px-2 shadow-none font-bold" value="${i.price > 0 ? i.price.toLocaleString('id-ID') : ''}" oninput="updateItem(${i.id}, 'price', this.value)"></div>`).join('');
-            if(items.length===0) wrapper.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">Tambah barang dulu...</p>';
+            
+            // --- UI BARU: GRID TERPISAH DAN JELAS ---
+            wrapper.innerHTML = items.map((i,x) => `
+                <div class="flex gap-2 items-center mb-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm animate-scaleIn">
+                    <span class="text-xs font-bold text-indigo-300 w-6 text-center pt-3">${x+1}.</span>
+                    
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">Nama Produk</label>
+                        <input type="text" placeholder="Contoh: Kopi Susu" 
+                               class="input-field w-full text-sm font-medium text-slate-700 bg-slate-50 focus:bg-white" 
+                               value="${i.name}" 
+                               oninput="updateItem(${i.id}, 'name', this.value)">
+                    </div>
+
+                    <div class="w-1/3 relative">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">Harga</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pt-1">Rp</span>
+                            <input type="text" placeholder="0" 
+                                   class="input-field pl-9 text-right font-mono font-bold text-slate-800 bg-slate-50 focus:bg-white" 
+                                   value="${i.price > 0 ? i.price.toLocaleString('id-ID') : ''}" 
+                                   onkeyup="formatCurrencyInput(this)"
+                                   onchange="updateItem(${i.id}, 'price', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            if(items.length===0) wrapper.innerHTML = '<div class="text-center py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200"><p class="text-xs text-slate-400 font-bold">Belum ada barang ditambahkan.</p></div>';
         }
 
         async function createInvoice() {
@@ -310,50 +322,30 @@
             const name = document.getElementById('wd-name').value;
 
             if(!amount || !rek || !name) return showToast("Data kurang lengkap", "⚠️");
+            if(amount < 10000) return showToast("Minimal Rp 10.000", "⚠️");
             if(amount > currentUser.balance) return showToast("Saldo tidak cukup", "💸");
 
             const res = await fetch('/api/send-notif', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    type: 'WITHDRAW', 
-                    data: { store: currentUser.store, email: currentUser.email, amount, bank, rek, name } 
-                })
+                body: JSON.stringify({ type: 'WITHDRAW', data: { store: currentUser.store, email: currentUser.email, amount, bank, rek, name } })
             });
 
-            if(res.ok) {
-                showToast("Request terkirim!", "✅");
-                closeModal('withdraw-modal');
-            }
+            if(res.ok) { showToast("Request terkirim!", "✅"); closeModal('withdraw-modal'); }
         }
 
         async function submitForgot() {
             const email = document.getElementById('forgot-email').value;
             if(!email) return showToast("Isi email!", "⚠️");
-            
-            await fetch('/api/send-notif', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ type: 'FORGOT_PIN', data: { email } })
-            });
-            
-            showToast("Cek email untuk PIN baru", "✅");
-            closeModal('forgot-modal');
+            await fetch('/api/send-notif', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type: 'FORGOT_PIN', data: { email } }) });
+            showToast("Cek email untuk PIN baru", "✅"); closeModal('forgot-modal');
         }
 
         function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Disalin!", "📋"); }
         function shareWa() { const url = document.getElementById("resultUrl").value; window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Tagihan:%20${url}`, '_blank'); }
         function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
         function openForgotPin() { document.getElementById('forgot-modal').classList.remove('hidden'); }
-        function openSettings() { showToast("Fitur segera hadir!", "🚧"); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        
-        // FUNGSI TOAST KEREN (PENGGANTI ALERT)
-        function showToast(msg, icon="🔔") { 
-            const t = document.getElementById('toast'); 
-            document.getElementById('toast-msg').innerText = msg; 
-            document.getElementById('toast-icon').innerText = icon; 
-            t.classList.remove('opacity-0', 'translate-y-10'); 
-            setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); 
-        }
+        function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
         
         addItem();
     </script>
