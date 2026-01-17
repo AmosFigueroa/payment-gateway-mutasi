@@ -8,12 +8,6 @@
     <link id="dynamic-favicon" rel="icon" type="image/png" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-        if (window.location.hostname === 'create-invoiceku.vercel.app') {
-            window.location.replace('/create-invoice.html');
-        }
-    </script>
 
     <style>
         body { 
@@ -27,14 +21,15 @@
         .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes fadeEnter { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
-        @keyframes successPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .receipt-cut {
             background-image: radial-gradient(circle at 10px 0, transparent 8px, #f8fafc 9px);
             background-size: 20px 10px;
             background-repeat: repeat-x;
             height: 10px; width: 100%;
         }
+        .qris-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 12px 12px; }
+        .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
+        @keyframes successPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -345,53 +340,73 @@
             setTimeout(() => { renderStep3(); }, 2000);
         }
 
+        // --- BAGIAN INI SUDAH DIPERBAIKI SESUAI REQUEST ---
         function renderStep3() {
             state.step = 3;
             const content = document.getElementById('app-content');
             const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            // Format Tanggal: 18 Januari 2026 pukul 00.46
+            const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ' pukul ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+            
             const actionArea = document.getElementById('action-area');
             actionArea.classList.remove('hidden');
 
+            // LOOPING DAFTAR BARANG
             const itemsList = state.items.map(i => `
-                <div class="flex justify-between text-xs text-slate-600 mb-1">
-                    <span>${i.n}</span>
-                    <span class="font-bold">Rp ${i.p.toLocaleString('id-ID')}</span>
+                <div class="flex justify-between text-sm text-slate-600 mb-2 border-b border-dashed border-slate-100 pb-2 last:border-0 last:pb-0">
+                    <span class="font-medium text-slate-700">${i.n}</span>
+                    <span class="font-bold text-slate-900">Rp ${i.p.toLocaleString('id-ID')}</span>
                 </div>
             `).join('');
 
             content.innerHTML = `
                 <div class="p-6 success-pop h-full flex flex-col items-center justify-center">
-                    <div class="w-full bg-white shadow-2xl shadow-emerald-200/50 rounded-2xl overflow-hidden relative border border-slate-100">
-                        <div class="h-2 bg-emerald-500 w-full"></div>
+                    <div class="w-full bg-white shadow-2xl shadow-emerald-200/50 rounded-3xl overflow-hidden relative border border-slate-100">
+                        <div class="h-3 bg-emerald-500 w-full"></div>
+                        
                         <div class="p-8 text-center border-b border-dashed border-slate-200 bg-white relative z-10">
-                            <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
-                                <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-emerald-100 shadow-sm">
+                                <svg class="w-12 h-12 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
                             </div>
                             <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">PEMBAYARAN BERHASIL</h2>
-                            <p class="text-xs text-slate-500 mt-2">Terima kasih, pesanan Anda telah lunas.</p>
+                            <p class="text-sm text-slate-500 mt-2 font-medium">Terima kasih, pesanan Anda telah lunas.</p>
                         </div>
-                        <div class="p-6 bg-slate-50">
-                            <div class="space-y-3">
-                                <div class="flex justify-between text-xs"><span class="text-slate-400">Tanggal</span><span class="font-bold text-slate-700">${dateStr}</span></div>
-                                <div class="flex justify-between text-xs"><span class="text-slate-400">ID Transaksi</span><span class="font-mono font-bold text-slate-700">${state.refId || '-'}</span></div>
-                                <div class="my-4 border-t border-slate-200 pt-4">
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Rincian Item</p>
+
+                        <div class="p-8 bg-slate-50/80">
+                            <div class="space-y-4">
+                                <div class="flex justify-between text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                    <span>Tanggal</span>
+                                    <span class="text-slate-700 font-bold normal-case">${dateStr}</span>
+                                </div>
+                                <div class="flex justify-between text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                    <span>ID Transaksi</span>
+                                    <span class="font-mono text-slate-700 font-bold normal-case select-all">${state.refId || '-'}</span>
+                                </div>
+                                
+                                <div class="my-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-widest">RINCIAN ITEM</p>
                                     ${itemsList}
                                 </div>
-                                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
-                                    <span class="font-bold text-slate-900">Total Bayar</span>
-                                    <span class="text-xl font-extrabold text-emerald-600">Rp ${state.totalAmount.toLocaleString('id-ID')}</span>
+
+                                <div class="flex justify-between items-center pt-2">
+                                    <span class="font-bold text-slate-900 text-sm uppercase tracking-wider">Total Bayar</span>
+                                    <span class="text-2xl font-extrabold text-slate-900">Rp ${state.totalAmount.toLocaleString('id-ID')}</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="receipt-cut w-full absolute bottom-0 left-0"></div>
+                        
+                        <div class="receipt-cut w-full absolute bottom-0 left-0 z-20"></div>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-6 animate-pulse bg-slate-50 inline-block px-3 py-1 rounded-full border border-slate-100">Otomatis kembali dalam <span id="redirect-timer" class="font-bold text-slate-600">5</span> detik</p>
+                    
+                    <div class="mt-8 text-center space-y-2">
+                        <p class="text-xs text-slate-400 font-medium">Otomatis kembali dalam <span id="redirect-timer" class="font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded text-[10px]">5</span> detik</p>
+                    </div>
                 </div>`;
             
             let backBtnText = "Kembali ke Beranda";
-            actionArea.innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-sm tracking-wide active:scale-[0.98]">${backBtnText}</button>`;
+            actionArea.innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-sm tracking-wide active:scale-[0.98] ring-1 ring-slate-900/10">${backBtnText}</button>`;
 
             let seconds = 5;
             const redirectInterval = setInterval(() => {
