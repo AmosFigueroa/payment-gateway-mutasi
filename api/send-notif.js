@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Schema Withdraw (Untuk menyimpan data sementara)
+// Schema Withdraw (Simpan data sementara)
 const WithdrawSchema = new mongoose.Schema({
   store: String, email: String, amount: Number,
   bank: String, rek: String, name: String,
@@ -15,27 +15,60 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     const { type, data } = req.body;
     
+    // Config
     const token = process.env.TELEGRAM_BOT_TOKEN; 
     const chatId = process.env.TELEGRAM_CHAT_ID;
     const gasUrl = process.env.GAS_EMAIL_URL;
 
-    // Helper Sanitize
+    // Helper: Bersihkan Teks (Anti Error HTML Telegram)
     const sanitize = (str) => String(str || "-").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    
+    // Helper: Generate PIN & URL
     const REAL_PIN = Math.floor(100000 + Math.random() * 900000).toString();
     data.generatedPin = REAL_PIN; 
+    const host = req.headers.host || 'create-invoiceku.vercel.app';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
 
-    // Connect DB jika perlu (Untuk Withdraw)
-    if (type === 'WITHDRAW') {
-        if (mongoose.connection.readyState !== 1) await mongoose.connect(MONGODB_URI);
+    // Connect DB jika perlu
+    if (type === 'WITHDRAW' && mongoose.connection.readyState !== 1) {
+        await mongoose.connect(MONGODB_URI);
     }
 
     let telegramMsg = "";
     let replyMarkup = null;
 
-    // --- LOGIKA PESAN ---
+    // --- TEMPLATE DESAIN BARU ---
 
-    if (type === 'WITHDRAW') {
-        // 1. SIMPAN KE DB
+    // 1. RESET PIN
+    if (type === 'FORGOT_PIN') {
+        telegramMsg = `
+🔑 <b>PERMINTAAN RESET PIN</b>
+────────────────
+👤 <b>${sanitize(data.email)}</b>
+────────────────
+🔐 PIN Baru : <code>${REAL_PIN}</code>
+────────────────
+<i>✅ Sistem otomatis mengirim email ke user.</i>
+`;
+    }
+
+    // 2. CREATE INVOICE
+    else if (type === 'CREATE_INVOICE') {
+        telegramMsg = `
+🧾 <b>TAGIHAN BARU DIBUAT</b>
+────────────────
+🏪 <b>${sanitize(data.store)}</b>
+💰 <b>Rp ${data.price}</b>
+────────────────
+📦 Item : ${sanitize(data.prod)}
+🔗 <a href="${data.url}">Buka Link Pembayaran</a>
+`;
+    }
+
+    // 3. WITHDRAW (PENCAIRAN)
+    else if (type === 'WITHDRAW') {
+        // Simpan ke DB dulu untuk callback button
         const newWd = new Withdraw({
             store: data.store, email: data.email, amount: data.amount,
             bank: data.bank, rek: data.rek, name: data.name
@@ -43,52 +76,72 @@ export default async function handler(req, res) {
         await newWd.save();
 
         telegramMsg = `
-<b>💸 REQUEST CAIR SALDO</b>
-────────────────────
-🏪 Toko: ${sanitize(data.store)}
+💸 <b>PENCAIRAN SALDO</b>
+────────────────
+🏪 <b>${sanitize(data.store)}</b>
 💰 <b>Rp ${parseInt(data.amount).toLocaleString('id-ID')}</b>
-────────────────────
-🏦 Bank: ${sanitize(data.bank)}
-💳 Rek : <code>${sanitize(data.rek)}</code>
-👤 A.N : ${sanitize(data.name)}
-
-<i>👉 Transfer manual, lalu TAP tombol di bawah.</i>
+────────────────
+🏦 Bank : ${sanitize(data.bank)}
+💳 Rek  : <code>${sanitize(data.rek)}</code>
+👤 A.N  : ${sanitize(data.name)}
+────────────────
+<i>👉 Transfer manual, lalu klik tombol konfirmasi.</i>
 `;
-        // 2. TOMBOL CALLBACK (Tanpa Link Browser)
+        // Tombol Callback (Tanpa Link Browser)
         replyMarkup = { 
             inline_keyboard: [[
-                { text: "✅ SUDAH TRANSFER (TAP)", callback_data: `ACC_WD:${newWd._id}` }
+                { text: "✅ SAYA SUDAH TRANSFER", callback_data: `ACC_WD:${newWd._id}` }
             ]] 
         };
     }
 
-    else if (type === 'FORGOT_PIN') {
-        telegramMsg = `<b>🔑 RESET PIN</b>\nUser: <code>${sanitize(data.email)}</code>\n🔐 PIN BARU: <code>${REAL_PIN}</code>`;
-    }
-    else if (type === 'CREATE_INVOICE') {
-        telegramMsg = `<b>🧾 INVOICE BARU</b>\nToko: ${sanitize(data.store)}\nTotal: Rp ${data.price}\n🔗 <a href="${data.url}">Lihat Link</a>`;
-    }
+    // 4. HAPUS AKUN
     else if (type === 'DELETE_ACCOUNT') {
-        telegramMsg = `<b>⛔ HAPUS AKUN</b>\nToko: ${sanitize(data.store)}\nAlasan: ${sanitize(data.reason)}`;
+        telegramMsg = `
+⛔ <b>PERMINTAAN HAPUS AKUN</b>
+────────────────
+🏪 <b>${sanitize(data.store)}</b>
+📝 Alasan: ${sanitize(data.reason)}
+────────────────
+<i>⚠️ Harap tinjau sebelum menghapus data.</i>
+`;
     }
+
+    // 5. REGISTER
     else if (type === 'REGISTER') {
-        telegramMsg = `<b>🆕 DAFTAR BARU</b>\nToko: ${sanitize(data.store)}\nEmail: ${sanitize(data.email)}\n🔐 PIN: <code>${REAL_PIN}</code>`;
+        telegramMsg = `
+🆕 <b>PENDAFTARAN MITRA BARU</b>
+────────────────
+🏪 <b>${sanitize(data.store)}</b>
+────────────────
+📧 Email : ${sanitize(data.email)}
+📱 WA    : <code>${sanitize(data.wa)}</code>
+🔐 PIN   : <code>${REAL_PIN}</code>
+────────────────
+<i>✅ Email sambutan telah dikirim.</i>
+`;
     }
 
-    // --- KIRIM TELEGRAM ---
-    if (token && chatId && telegramMsg) {
-        const payload = { chat_id: chatId, text: telegramMsg, parse_mode: 'HTML', disable_web_page_preview: true };
-        if (replyMarkup) payload.reply_markup = replyMarkup;
+    // --- EKSEKUSI KIRIM ---
 
+    // 1. Kirim ke Telegram
+    if (token && chatId && telegramMsg) {
         try {
             await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    chat_id: chatId, 
+                    text: telegramMsg, 
+                    parse_mode: 'HTML', 
+                    disable_web_page_preview: true,
+                    reply_markup: replyMarkup
+                })
             });
         } catch (e) { console.error("Tele Error:", e); }
     }
 
-    // --- KIRIM EMAIL (GAS) ---
+    // 2. Kirim ke Email (GAS)
     const emailTypes = ['REGISTER', 'FORGOT_PIN', 'CREATE_INVOICE', 'DELETE_ACCOUNT'];
     if (gasUrl && emailTypes.includes(type) && data.email) {
         fetch(gasUrl, {
