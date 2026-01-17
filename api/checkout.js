@@ -21,6 +21,7 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 
+// --- HELPER 1: CRC16 (Untuk Dynamic QRIS) ---
 function crc16(str) {
   let crc = 0xFFFF;
   for (let i = 0; i < str.length; i++) {
@@ -34,6 +35,7 @@ function crc16(str) {
   return hex.padStart(4, '0');
 }
 
+// --- HELPER 2: Generate Dynamic String ---
 function convertToDynamic(qrisRaw, amount) {
   let amountStr = amount.toString();
   let tag54 = "54" + amountStr.length.toString().padStart(2, '0') + amountStr;
@@ -45,11 +47,42 @@ function convertToDynamic(qrisRaw, amount) {
   return newString + crc16(newString);
 }
 
+// --- HELPER 3: PARSE DATA DARI STRING QRIS (AUTO DETECT) ---
+function parseQrisData(qrisStr) {
+    let i = 0;
+    let name = "MERCHANT QRIS"; // Default
+    let nmid = "-";
+    
+    try {
+        while (i < qrisStr.length) {
+            const id = qrisStr.substr(i, 2);
+            const len = parseInt(qrisStr.substr(i + 2, 2));
+            const val = qrisStr.substr(i + 4, len);
+
+            if (id === '59') { // Tag 59: Merchant Name
+                name = val;
+            }
+            if (id === '51') { // Tag 51: Merchant Account Info (NMID biasanya disini)
+                let j = 0;
+                while (j < val.length) {
+                    const subId = val.substr(j, 2);
+                    const subLen = parseInt(val.substr(j + 2, 2));
+                    const subVal = val.substr(j + 4, subLen);
+                    if (subId === '02') nmid = subVal; // Subtag 02: NMID
+                    j += 4 + subLen;
+                }
+            }
+            i += 4 + len;
+        }
+    } catch (e) { console.log("Error parsing QRIS", e); }
+    
+    return { name, nmid };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // --- DATA REKENING DI SINI ---
-  // Pastikan formatnya: "NOMOR_REKENING a.n NAMA_PEMILIK" (Pemisah " a.n ")
+  // --- SETTING DATA REKENING ---
   const DATA_PAYMENT = {
     qris: "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204899953033605802ID5922Wago Digital Solutions6006SLEMAN61055529462070703A016304C0F0", 
     bcava: "70001085171592306 a.n Wago Payment",
@@ -78,15 +111,20 @@ export default async function handler(req, res) {
     let qrImage = null;
     let accNo = "";
     let accName = "";
+    let qrisDetails = { name: "", nmid: "" }; // Var baru untuk dikirim ke frontend
 
     if (selectedMethod === 'qris') {
+      // 1. Generate QR Image
       const dynamicQris = convertToDynamic(DATA_PAYMENT.qris, totalPay);
       qrImage = await QRCode.toDataURL(dynamicQris);
+      
+      // 2. Auto Detect Name & NMID from String
+      qrisDetails = parseQrisData(DATA_PAYMENT.qris); 
+
     } else {
       if(DATA_PAYMENT[selectedMethod]) {
-          // Logic Memisah Nomor dan Nama
           const rawInfo = DATA_PAYMENT[selectedMethod];
-          const parts = rawInfo.split(' a.n '); // Pisahkan berdasarkan " a.n "
+          const parts = rawInfo.split(' a.n ');
           accNo = parts[0];
           accName = parts[1] || "";
       } else {
@@ -116,7 +154,8 @@ export default async function handler(req, res) {
       order_id: newOrder.order_id,
       total_pay: totalPay,
       qr_image: qrImage,
-      // Kirim Data Terpisah ke Frontend
+      // Kirim Data Hasil Auto-Detect
+      qris_meta: qrisDetails, 
       payment_details: {
           type: selectedMethod === 'qris' ? 'qris' : 'bank',
           bank_code: selectedMethod,
