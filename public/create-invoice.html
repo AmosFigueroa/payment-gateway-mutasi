@@ -23,19 +23,15 @@
 <body class="flex items-center justify-center p-4">
 
     <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-sm text-center shadow-2xl relative">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-sm text-center shadow-2xl">
             <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-10 h-10">
             </div>
             <h2 class="text-xl font-bold text-slate-800 mb-2">Login Merchant</h2>
             <p class="text-xs text-slate-500 mb-6">Masukkan PIN keamanan untuk akses dompet.</p>
             <input type="password" id="login-pin" class="input-field text-center text-2xl tracking-[0.5em] font-bold mb-4" placeholder="••••" maxlength="6">
-            <button onclick="doLogin()" class="btn-primary w-full shadow-lg shadow-slate-900/20">MASUK DASHBOARD</button>
-            
-            <div class="mt-6 pt-4 border-t border-slate-100">
-                <p class="text-xs text-slate-400 mb-2">Belum punya akun?</p>
-                <button onclick="openRegister()" class="text-xs font-bold text-indigo-500 hover:text-indigo-700">DAFTAR MITRA SEKARANG</button>
-            </div>
+            <button onclick="doLogin()" class="btn-primary w-full">MASUK DASHBOARD</button>
+            <p class="text-[10px] text-slate-400 mt-4">Default PIN: 123456</p>
         </div>
     </div>
 
@@ -44,12 +40,12 @@
         <nav class="flex justify-between items-center mb-8 bg-slate-800/50 backdrop-blur-md p-4 rounded-2xl border border-white/10 text-white">
             <div class="flex items-center gap-3">
                 <img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-8 h-8">
-                <span class="font-bold tracking-wide hidden sm:block">MERCHANT PANEL</span>
+                <span class="font-bold tracking-wide">MERCHANT PANEL</span>
             </div>
             <div class="flex items-center gap-4">
-                <div class="text-right">
+                <div class="text-right hidden sm:block">
                     <p class="text-[10px] text-slate-400 uppercase font-bold">Saldo Dompet</p>
-                    <p class="text-emerald-400 font-bold font-mono" id="nav-balance">Rp 2.450.000</p>
+                    <p class="text-emerald-400 font-bold font-mono">Rp 2.450.000</p>
                 </div>
                 <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">LOGOUT</button>
             </div>
@@ -80,7 +76,8 @@
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Daftar Barang</label>
                             <span id="item-count" class="text-[10px] font-bold text-slate-400">0/10</span>
                         </div>
-                        <div id="items-wrapper" class="space-y-2 mb-3"></div>
+                        <div id="items-wrapper" class="space-y-2 mb-3">
+                            </div>
                         <button onclick="addItem()" id="btn-add-item" class="w-full py-2 bg-white border border-dashed border-indigo-300 text-indigo-500 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-all flex items-center justify-center gap-2">
                             <span>+ Tambah Barang</span>
                         </button>
@@ -114,17 +111,10 @@
                 <div class="bg-gradient-to-br from-indigo-600 to-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
                     
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs text-indigo-200 font-bold uppercase tracking-widest mb-1">Saldo Dompet</p>
-                            <h2 class="text-3xl font-extrabold mb-1" id="wallet-balance">Rp 2.450.000</h2>
-                        </div>
-                        <button onclick="openWithdraw()" class="bg-white text-slate-900 px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-indigo-50 transition-all">
-                            💸 CAIRKAN
-                        </button>
-                    </div>
+                    <p class="text-xs text-indigo-200 font-bold uppercase tracking-widest mb-1">Saldo Dompet</p>
+                    <h2 class="text-3xl font-extrabold mb-4">Rp 2.450.000</h2>
                     
-                    <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10 my-4">
+                    <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10 mb-4">
                         <div class="flex justify-between text-xs mb-1">
                             <span class="text-indigo-200">Limit Mingguan</span>
                             <span class="font-bold">Rp 3.000.000</span>
@@ -132,7 +122,7 @@
                         <div class="w-full bg-slate-900/50 rounded-full h-1.5">
                             <div class="bg-emerald-400 h-1.5 rounded-full" style="width: 81%"></div>
                         </div>
-                        <p class="text-[10px] text-right mt-1 text-indigo-300">Sisa Kuota: Rp 550.000</p>
+                        <p class="text-[10px] text-right mt-1 text-indigo-300">Sisa: Rp 550.000</p>
                     </div>
 
                     <div class="flex items-center gap-2 text-[10px] bg-yellow-500/20 text-yellow-200 px-3 py-2 rounded-lg border border-yellow-500/30">
@@ -146,181 +136,96 @@
                         <h3 class="font-bold text-slate-700 text-sm">Riwayat Transaksi</h3>
                         <span class="text-[10px] text-slate-400">Retention: 2 Bulan</span>
                     </div>
+                    
                     <div class="overflow-y-auto max-h-[300px] pr-1 space-y-3" id="history-list">
                         <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs">✔</div>
-                                <div><p class="text-xs font-bold text-slate-700">Sepatu Nike</p><p class="text-[10px] text-slate-400">17 Jan, 14:30 • QRIS</p></div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-700">Sepatu Nike</p>
+                                    <p class="text-[10px] text-slate-400">17 Jan, 14:30 • QRIS</p>
+                                </div>
                             </div>
-                            <div class="text-right"><p class="text-xs font-bold text-emerald-600">+Rp 250.000</p><p class="text-[9px] text-slate-400">Settled</p></div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-emerald-600">+Rp 250.000</p>
+                                <p class="text-[9px] text-slate-400">Settled</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 opacity-60">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs">✕</div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-700">Kaos Polos</p>
+                                    <p class="text-[10px] text-slate-400">16 Jan, 09:12 • BCA</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-slate-500">Rp 50.000</p>
+                                <p class="text-[9px] text-red-400">Expired</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
-    <div id="withdraw-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl border border-white/20">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">💸 Cairkan Saldo</h3>
-            <div class="space-y-3">
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Nominal (Min 50rb)</label>
-                    <input type="number" id="wd-amount" class="input-field font-mono" placeholder="Contoh: 100000">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Bank/E-Wallet</label>
-                        <select id="wd-bank" class="input-field">
-                            <option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option>
-                            <option>DANA</option><option>OVO</option><option>GoPay</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">No. Rekening</label>
-                        <input type="text" id="wd-rek" class="input-field" placeholder="123xxx">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Atas Nama</label>
-                    <input type="text" id="wd-name" class="input-field" placeholder="Nama Pemilik">
-                </div>
-                <div class="text-[10px] text-slate-500 bg-slate-100 p-2 rounded-lg">
-                    ⚠️ Pencairan diproses H+1 Hari Kerja.<br>Maksimal Rp 3.000.000 / Minggu.
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mt-6">
-                <button onclick="document.getElementById('withdraw-modal').classList.add('hidden')" class="btn-secondary text-xs">Batal</button>
-                <button onclick="submitWithdraw()" class="btn-primary text-xs">Kirim Request</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="register-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">📝 Daftar Mitra Baru</h3>
-            <div class="space-y-3">
-                <input type="text" id="reg-store" class="input-field" placeholder="Nama Toko">
-                <input type="text" id="reg-wa" class="input-field" placeholder="WhatsApp Aktif">
-                <input type="email" id="reg-email" class="input-field" placeholder="Email Aktif">
-                <p class="text-[10px] text-slate-400 mt-2">Data akan dikirim ke Admin untuk verifikasi. PIN Login akan dikirim via WhatsApp.</p>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mt-6">
-                <button onclick="document.getElementById('register-modal').classList.add('hidden')" class="btn-secondary text-xs">Batal</button>
-                <button onclick="submitRegister()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs">Daftar Sekarang</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full opacity-0 pointer-events-none transition-all duration-300 text-xs font-bold transform translate-y-10 z-[60]">Notification</div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full opacity-0 pointer-events-none transition-all duration-300 text-xs font-bold transform translate-y-10 z-50">Notification</div>
 
     <script>
         const BASE_URL = "https://payment-gateway-mutasi.vercel.app/";
         let items = [];
         const MAX_ITEMS = 10;
-        let currentBalance = 2450000; // Simulasi Saldo
 
-        // --- AUTH & MODALS ---
+        // --- LOGIN LOGIC ---
         function doLogin() {
             const pin = document.getElementById('login-pin').value;
-            if(pin === "123456") {
+            if(pin === "123456") { // PIN SIMPLE
                 document.getElementById('login-overlay').classList.add('hidden');
                 document.getElementById('main-dashboard').classList.remove('hidden');
-                addItem();
-            } else { alert("PIN Salah! Coba 123456"); }
-        }
-        function logout() { location.reload(); }
-        function openRegister() { document.getElementById('register-modal').classList.remove('hidden'); }
-        function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
-
-        // --- NOTIFIKASI TELEGRAM ---
-        async function sendTelegramNotif(type, data) {
-            try {
-                // Panggil API Backend (Supaya Token Aman)
-                await fetch('/api/send-notif', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ type, data })
-                });
-                showToast("Permintaan berhasil dikirim ke Admin!");
-            } catch (e) {
-                showToast("Gagal kirim notifikasi: " + e.message);
+                addItem(); // Add first item automatically
+            } else {
+                alert("PIN Salah! Coba 123456");
             }
         }
+        function logout() { location.reload(); }
 
-        async function submitRegister() {
-            const store = document.getElementById('reg-store').value;
-            const wa = document.getElementById('reg-wa').value;
-            const email = document.getElementById('reg-email').value;
-
-            if(!store || !wa || !email) { showToast("Lengkapi semua data!"); return; }
-
-            const btn = document.querySelector('#register-modal button:last-child');
-            btn.innerText = "Mengirim...";
-            
-            await sendTelegramNotif('REGISTER', { store, wa, email });
-            
-            document.getElementById('register-modal').classList.add('hidden');
-            btn.innerText = "Daftar Sekarang";
-            alert("Pendaftaran terkirim! Admin akan menghubungi Anda via WhatsApp.");
-        }
-
-        async function submitWithdraw() {
-            const amount = parseInt(document.getElementById('wd-amount').value);
-            const bank = document.getElementById('wd-bank').value;
-            const rek = document.getElementById('wd-rek').value;
-            const name = document.getElementById('wd-name').value;
-
-            if(!amount || !rek || !name) { showToast("Lengkapi data pencairan!"); return; }
-            if(amount < 50000) { showToast("Minimal pencairan Rp 50.000"); return; }
-            if(amount > currentBalance) { showToast("Saldo tidak cukup!"); return; }
-            if(amount > 3000000) { showToast("Melebihi limit mingguan (3jt)!"); return; }
-
-            const btn = document.querySelector('#withdraw-modal button:last-child');
-            btn.innerText = "Memproses...";
-
-            // Simulasi potong saldo
-            currentBalance -= amount;
-            document.getElementById('wallet-balance').innerText = "Rp " + currentBalance.toLocaleString('id-ID');
-            document.getElementById('nav-balance').innerText = "Rp " + currentBalance.toLocaleString('id-ID');
-
-            await sendTelegramNotif('WITHDRAW', { 
-                store: document.getElementById('storeName').value, 
-                amount: amount, 
-                bank: bank, 
-                rek: rek, 
-                name: name,
-                sisa: currentBalance
-            });
-
-            document.getElementById('withdraw-modal').classList.add('hidden');
-            btn.innerText = "Kirim Request";
-        }
-
-        // --- ITEM LOGIC (SAMA SEPERTI SEBELUMNYA) ---
+        // --- ITEM LOGIC ---
         function addItem() {
             if (items.length >= MAX_ITEMS) { showToast("Maksimal 10 barang!"); return; }
+            
             const id = Date.now();
             items.push({ id, name: "", price: 0 });
             renderItems();
         }
+
         function removeItem(id) {
             items = items.filter(i => i.id !== id);
             renderItems();
         }
+
         function updateItem(id, field, value) {
             const item = items.find(i => i.id === id);
             if (item) {
                 if (field === 'price') {
+                    // Format numeric
                     let clean = value.replace(/\D/g, "");
                     item.price = parseInt(clean || 0);
-                } else { item.name = value; }
+                } else {
+                    item.name = value;
+                }
             }
-            renderItems(false); updateTotal();
+            renderItems(false); // False = jangan re-render HTML input (biar fokus gak ilang)
+            updateTotal();
         }
+
         function renderItems(fullRender = true) {
             document.getElementById('item-count').innerText = `${items.length}/${MAX_ITEMS}`;
+            
             if (!fullRender) return;
+
             const wrapper = document.getElementById('items-wrapper');
             wrapper.innerHTML = items.map((item, index) => `
                 <div class="flex gap-2 items-center animate-pulse-once">
@@ -332,8 +237,10 @@
                     <button onclick="removeItem(${item.id})" class="text-red-400 hover:text-red-600 p-2">✕</button>
                 </div>
             `).join('');
+            
             updateTotal();
         }
+
         function updateTotal() {
             const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
             document.getElementById('total-display').innerText = "Rp " + total.toLocaleString('id-ID');
@@ -344,6 +251,7 @@
         function generateLink() {
             const wa = document.getElementById('custWa').value;
             const email = document.getElementById('custEmail').value;
+            
             if(!wa || !email) { showToast("WA & Email Pelanggan Wajib Diisi!"); return; }
             if(items.length === 0 || items[0].price === 0) { showToast("Masukkan minimal 1 barang & harga!"); return; }
 
@@ -351,19 +259,23 @@
             const timer = document.getElementById('timer').value;
             const total = updateTotal();
             const ref = "INV-" + Date.now();
+
+            // CONSTRUCT ITEMS STRING (JSON Base64 encoded agar URL rapi)
+            // Kita kirim string JSON di parameter 'items'
             const itemsEncoded = btoa(JSON.stringify(items.map(i => ({n: i.name, p: i.price}))));
 
             const params = new URLSearchParams();
             params.append('store', store);
-            params.append('price', total); 
-            params.append('items', itemsEncoded);
-            params.append('prod', items.length + " Items"); 
+            params.append('price', total); // Total tetap dikirim untuk kompatibilitas
+            params.append('items', itemsEncoded); // Data detail barang
+            params.append('prod', items.length + " Items"); // Fallback nama produk
             params.append('ref_id', ref);
             params.append('wa', wa);
             params.append('email', email);
             params.append('time', timer);
 
             const finalUrl = `${BASE_URL}?${params.toString()}`;
+            
             document.getElementById('resultUrl').value = finalUrl;
             document.getElementById('result-area').classList.remove('hidden');
             showToast("Link Invoice Berhasil Dibuat!");
@@ -380,6 +292,7 @@
             const url = document.getElementById("resultUrl").value;
             const total = updateTotal();
             let itemListText = items.map(i => `- ${i.name} (Rp ${i.price.toLocaleString('id-ID')})`).join('%0A');
+            
             const text = `Halo Kak,%0A%0ABerikut detail pesanan Anda:%0A${itemListText}%0A%0ATotal: *Rp ${total.toLocaleString('id-ID')}*%0A%0ALink Bayar: ${url}`;
             window.open(`https://wa.me/${document.getElementById('custWa').value}?text=${text}`, '_blank');
         }
