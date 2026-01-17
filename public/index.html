@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wago Payment ID</title>
     
-    <link rel="icon" type="image/png" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
-    <link rel="apple-touch-icon" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
+    <link id="dynamic-favicon" rel="icon" type="image/png" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Jika user membuka domain create-invoiceku... alihkan ke tool buat invoice
+        if (window.location.hostname === 'create-invoiceku.vercel.app') {
+            window.location.replace('/create-invoice.html');
+        }
+    </script>
+
     <style>
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
@@ -27,24 +34,15 @@
                         linear-gradient(-45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%);
             background-size: 16px 32px; background-position: 0 100%; height: 16px;
         }
-
-        /* Animations */
         .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
         .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: #10b981; fill: none; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards; }
         @keyframes stroke { 100% { stroke-dashoffset: 0; } }
         .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
         @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        
-        /* Custom Dropdown Animation */
         .dropdown-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: top; }
         .dropdown-open { opacity: 1; transform: scaleY(1); max-height: 300px; }
         .dropdown-closed { opacity: 0; transform: scaleY(0.9); max-height: 0; pointer-events: none; }
-        
-        /* QRIS Pattern Background for Web */
-        .qris-pattern {
-            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-            background-size: 12px 12px;
-        }
+        .qris-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 12px 12px; }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -56,10 +54,10 @@
         <header class="flex-none px-6 py-4 bg-white/80 border-b border-slate-100 flex items-center justify-between backdrop-blur-xl z-20">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-200 overflow-hidden">
-                   <img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-full h-full object-contain">
+                   <img id="header-logo" src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-full h-full object-contain">
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-slate-900 leading-tight">Wago Payment ID</h1>
+                    <h1 id="header-title" class="font-bold text-lg text-slate-900 leading-tight">Wago Payment ID</h1>
                     <div class="flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full w-fit border border-emerald-100 mt-0.5">
                         <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                         <p class="text-[9px] font-bold text-emerald-700 uppercase">SECURE CHECKOUT</p>
@@ -92,14 +90,37 @@
             </div>
         </div>
     </div>
-
+    
     <input type="hidden" id="productName">
     <input type="hidden" id="price">
     <input type="hidden" id="customerWa">
     <input type="hidden" id="customerEmail">
 
     <script>
-        // --- DATA BANK & LOGO ---
+        // ============================================
+        // 🌍 KONFIGURASI DOMAIN
+        // ============================================
+        const CURRENT_DOMAIN = window.location.hostname;
+        const DOMAIN_SETTINGS = {
+            "payment-gateway-mutasi.vercel.app": { 
+                name: "Wago Payment ID",
+                logo: "https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png"
+            }
+            // Tambahkan domain lain di sini jika perlu
+        };
+
+        function applyDomainSettings() {
+            const settings = DOMAIN_SETTINGS[CURRENT_DOMAIN] || DOMAIN_SETTINGS["payment-gateway-mutasi.vercel.app"];
+            document.title = settings.name;
+            document.getElementById('header-title').innerText = settings.name;
+            document.getElementById('header-logo').src = settings.logo;
+            document.getElementById('dynamic-favicon').href = settings.logo;
+        }
+
+        // ============================================
+        // END KONFIGURASI
+        // ============================================
+
         const bankData = [
             { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
             { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
@@ -116,22 +137,31 @@
             notifyUrl: "", 
             selectedMethod: 'qris', 
             productName: "Produk", 
-            timeoutMinutes: 60, 
-            refId: "",
-            activeQrisData: null
+            timeoutMinutes: 15, // <--- UPDATE: DEFAULT 15 MENIT
+            refId: "", 
+            activeQrisData: null 
         };
 
-        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
         window.onload = function() {
+            applyDomainSettings();
+
             const params = new URLSearchParams(window.location.search);
             state.returnUrl = params.get('return') || document.referrer || "";
             state.notifyUrl = params.get('notify') || "";
             state.productName = decodeURIComponent(params.get('prod') || "Produk");
             state.totalAmount = parseInt(params.get('price')) || 1000;
             state.refId = params.get('ref_id') || "";
+            
+            // Override Timer dari URL jika ada, jika tidak pakai default 15
             if(params.get('time')) state.timeoutMinutes = parseInt(params.get('time'));
             
+            if(params.get('store')) {
+                document.getElementById('header-title').innerText = decodeURIComponent(params.get('store'));
+                document.title = decodeURIComponent(params.get('store'));
+            }
+
             document.getElementById('productName').value = state.productName;
             document.getElementById('price').value = state.totalAmount;
             document.getElementById('customerWa').value = params.get('wa') || "-";
@@ -140,7 +170,6 @@
             renderStep1();
         };
 
-        // --- INTERAKSI METODE PEMBAYARAN ---
         window.toggleBankDropdown = () => {
             const dropdown = document.getElementById('bank-dropdown-list');
             const arrow = document.getElementById('bank-arrow');
@@ -273,15 +302,7 @@
                 const d = await res.json();
                 if(d.status === 'success') { 
                     state.totalAmount = d.total_pay; 
-                    
-                    if(d.qris_meta) {
-                        state.activeQrisData = {
-                            image: d.qr_image,
-                            name: d.qris_meta.name,
-                            nmid: d.qris_meta.nmid
-                        };
-                    }
-                    
+                    if(d.qris_meta) { state.activeQrisData = { image: d.qr_image, name: d.qris_meta.name, nmid: d.qris_meta.nmid }; }
                     renderStep2(d); 
                 } 
                 else { showAlert("Gagal", d.error || "Gagal memproses pesanan."); renderStep1(); }
@@ -376,7 +397,6 @@
             startCheckingStatus(apiData.order_id);
         }
 
-        // --- FUNGSI GENERATE GAMBAR QRIS (CANVAS) ---
         async function downloadQris() {
             if (!state.activeQrisData) return;
 
@@ -384,40 +404,32 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Set Ukuran Canvas (Resolusi Tinggi)
             canvas.width = 400;
             canvas.height = 650;
 
-            // Load QRIS Logo Image First (Untuk menggantikan teks)
             const qrisLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
             const logoImg = new Image();
-            logoImg.crossOrigin = "Anonymous"; // PENTING UNTUK CORS
+            logoImg.crossOrigin = "Anonymous";
             logoImg.src = qrisLogoUrl;
 
             logoImg.onload = () => {
-                // 1. Background Putih
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // 2. Header Merah
                 ctx.fillStyle = '#bf1e2e';
                 ctx.fillRect(0, 0, canvas.width, 80);
 
-                // 3. Draw Logo QRIS (Gantikan Teks)
-                // Kita gunakan filter untuk membuatnya putih
                 ctx.filter = 'brightness(0) invert(1)';
                 const logoWidth = 90; 
-                const logoHeight = 30; // Approx aspect ratio
+                const logoHeight = 30;
                 ctx.drawImage(logoImg, 25, 25, logoWidth, logoHeight);
-                ctx.filter = 'none'; // Reset filter
+                ctx.filter = 'none';
 
-                // Teks "National Standard"
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 16px sans-serif';
                 ctx.textAlign = 'right';
                 ctx.fillText('National Standard', canvas.width - 25, 48);
 
-                // 4. Nama Merchant & NMID
                 ctx.fillStyle = '#1e293b'; 
                 ctx.font = 'bold 22px sans-serif';
                 ctx.textAlign = 'center';
@@ -427,7 +439,6 @@
                 ctx.font = '14px monospace';
                 ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
 
-                // 5. Gambar QR Code
                 const qrImg = new Image();
                 qrImg.src = image;
                 
@@ -436,18 +447,16 @@
                     const xPos = (canvas.width - qrSize) / 2;
                     ctx.drawImage(qrImg, xPos, 190, qrSize, qrSize);
 
-                    // Nominal
+                    // NOMINAL DI GAMBAR
                     ctx.fillStyle = '#1e293b'; 
                     ctx.font = 'bold 20px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText(`Total: ${formatRupiah(state.totalAmount)}`, canvas.width / 2, 530);
 
-                    // Footer
                     ctx.fillStyle = '#94a3b8'; 
                     ctx.font = '12px sans-serif';
                     ctx.fillText('Dicetak oleh: GoPay', canvas.width / 2, 570);
 
-                    // Trigger Download
                     const link = document.createElement('a');
                     link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`;
                     link.href = canvas.toDataURL('image/png');
@@ -458,7 +467,6 @@
             };
         }
 
-        // --- TIMER & STATUS CHECKER ---
         function startTimer(duration) {
             let timer = duration;
             state.timerInterval = setInterval(() => {
