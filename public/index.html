@@ -118,7 +118,7 @@
             productName: "Produk", 
             timeoutMinutes: 60, 
             refId: "",
-            activeQrisData: null // Menyimpan data QRIS untuk download
+            activeQrisData: null
         };
 
         const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -274,7 +274,6 @@
                 if(d.status === 'success') { 
                     state.totalAmount = d.total_pay; 
                     
-                    // SIMPAN DATA QRIS UNTUK DOWNLOADER
                     if(d.qris_meta) {
                         state.activeQrisData = {
                             image: d.qr_image,
@@ -327,7 +326,6 @@
                 instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
             } else {
                 
-                // DATA AUTO-DETECT
                 const merchantName = apiData.qris_meta?.name || "Merchant QRIS";
                 const merchantNMID = apiData.qris_meta?.nmid || "-";
 
@@ -388,56 +386,75 @@
             
             // Set Ukuran Canvas (Resolusi Tinggi)
             canvas.width = 400;
-            canvas.height = 600;
+            canvas.height = 650;
 
-            // 1. Background Putih
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Load QRIS Logo Image First (Untuk menggantikan teks)
+            const qrisLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
+            const logoImg = new Image();
+            logoImg.crossOrigin = "Anonymous"; // PENTING UNTUK CORS
+            logoImg.src = qrisLogoUrl;
 
-            // 2. Header Merah
-            ctx.fillStyle = '#bf1e2e';
-            ctx.fillRect(0, 0, canvas.width, 80);
+            logoImg.onload = () => {
+                // 1. Background Putih
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 3. Teks Header (QRIS & National Standard)
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 36px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText('QRIS', 25, 55); // Simulasi Logo QRIS Teks
-            
-            ctx.font = 'bold 16px sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText('National Standard', canvas.width - 25, 48);
+                // 2. Header Merah
+                ctx.fillStyle = '#bf1e2e';
+                ctx.fillRect(0, 0, canvas.width, 80);
 
-            // 4. Nama Merchant & NMID
-            ctx.fillStyle = '#1e293b'; // Warna Slate-800
-            ctx.font = 'bold 22px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(name.toUpperCase(), canvas.width / 2, 130);
+                // 3. Draw Logo QRIS (Gantikan Teks)
+                // Kita gunakan filter untuk membuatnya putih
+                ctx.filter = 'brightness(0) invert(1)';
+                const logoWidth = 90; 
+                const logoHeight = 30; // Approx aspect ratio
+                ctx.drawImage(logoImg, 25, 25, logoWidth, logoHeight);
+                ctx.filter = 'none'; // Reset filter
 
-            ctx.fillStyle = '#64748b'; // Warna Slate-500
-            ctx.font = '14px monospace';
-            ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
+                // Teks "National Standard"
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText('National Standard', canvas.width - 25, 48);
 
-            // 5. Gambar QR Code
-            const qrImg = new Image();
-            qrImg.src = image;
-            
-            qrImg.onload = () => {
-                // Draw QR Code Center
-                const qrSize = 300;
-                const xPos = (canvas.width - qrSize) / 2;
-                ctx.drawImage(qrImg, xPos, 190, qrSize, qrSize);
+                // 4. Nama Merchant & NMID
+                ctx.fillStyle = '#1e293b'; 
+                ctx.font = 'bold 22px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(name.toUpperCase(), canvas.width / 2, 130);
 
-                // 6. Footer Text
-                ctx.fillStyle = '#94a3b8'; // Slate-400
-                ctx.font = '12px sans-serif';
-                ctx.fillText('Dicetak oleh: GoPay', canvas.width / 2, 530);
+                ctx.fillStyle = '#64748b'; 
+                ctx.font = '14px monospace';
+                ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
 
-                // 7. Trigger Download
-                const link = document.createElement('a');
-                link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                // 5. Gambar QR Code
+                const qrImg = new Image();
+                qrImg.src = image;
+                
+                qrImg.onload = () => {
+                    const qrSize = 300;
+                    const xPos = (canvas.width - qrSize) / 2;
+                    ctx.drawImage(qrImg, xPos, 190, qrSize, qrSize);
+
+                    // Nominal
+                    ctx.fillStyle = '#1e293b'; 
+                    ctx.font = 'bold 20px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`Total: ${formatRupiah(state.totalAmount)}`, canvas.width / 2, 530);
+
+                    // Footer
+                    ctx.fillStyle = '#94a3b8'; 
+                    ctx.font = '12px sans-serif';
+                    ctx.fillText('Dicetak oleh: GoPay', canvas.width / 2, 570);
+
+                    // Trigger Download
+                    const link = document.createElement('a');
+                    link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+
+                    showToast("Gambar QRIS berhasil disimpan!");
+                };
             };
         }
 
@@ -470,7 +487,6 @@
             setTimeout(() => { renderStep3(); }, 2000);
         }
 
-        // --- UPDATE STEP 3 (AUTO REDIRECT 5 DETIK) ---
         function renderStep3() {
             state.step = 3;
             const content = document.getElementById('app-content');
@@ -509,7 +525,6 @@
             let backBtnText = state.storeName && state.storeName !== "Wago Store" ? "Kembali ke " + state.storeName : "Kembali ke Beranda";
             actionArea.innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-sm tracking-wide active:scale-[0.98]">${backBtnText}</button>`;
 
-            // LOGIC HITUNG MUNDUR & REDIRECT
             let seconds = 5;
             const redirectInterval = setInterval(() => {
                 seconds--;
