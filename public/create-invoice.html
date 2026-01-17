@@ -4,127 +4,237 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buat Invoice - Wago Payment</title>
+    
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
+    <link rel="apple-touch-icon" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .input-field { @apply w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm font-medium text-slate-700; }
-        .label { @apply block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2; }
+        /* MENGGUNAKAN STYLE YANG SAMA DENGAN HALAMAN PEMBAYARAN */
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0f172a;
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: cover; background-attachment: fixed;
+            color: #334155; min-height: 100vh;
+        }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.4); }
+        .input-field { 
+            width: 100%; 
+            padding: 12px 16px; 
+            background-color: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 12px; 
+            color: #334155; 
+            font-weight: 600; 
+            font-size: 0.875rem; 
+            transition: all 0.2s;
+        }
+        .input-field:focus { 
+            outline: none; 
+            border-color: #6366f1; 
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); 
+            background-color: #fff;
+        }
+        .label { 
+            display: block; 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            color: #94a3b8; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            margin-bottom: 6px; 
+            margin-left: 4px;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 8px;
+        }
+        .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes fadeEnter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen py-10 px-4">
+<body class="flex items-center justify-center p-4 sm:p-8">
 
-    <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-10">
-            <h1 class="text-2xl font-extrabold text-slate-900">Buat Link Invoice</h1>
-            <p class="text-slate-500 text-sm mt-1">Generate link pembayaran Wago Payment dengan mudah</p>
+    <div class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="w-full max-w-5xl fade-enter">
+        
+        <div class="flex items-center gap-4 mb-8 justify-center sm:justify-start">
+            <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-white/20">
+                <img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-8 h-8 object-contain">
+            </div>
+            <div>
+                <h1 class="text-2xl font-extrabold text-white tracking-tight">Invoice Generator</h1>
+                <p class="text-slate-400 text-sm font-medium">Buat link pembayaran Wago Payment</p>
+            </div>
         </div>
 
-        <div class="grid gap-6 md:grid-cols-2">
-            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 h-fit">
-                <div class="space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-7 space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-[2rem] shadow-2xl">
                     
-                    <div>
-                        <label class="label">Informasi Produk</label>
-                        <div class="space-y-3">
-                            <input type="text" id="storeName" class="input-field" placeholder="Nama Toko (Cth: Wago Store)" value="Wago Store">
-                            <input type="text" id="productName" class="input-field" placeholder="Nama Produk/Jasa">
-                            <div class="relative">
-                                <span class="absolute left-4 top-3 text-slate-400 font-bold">Rp</span>
-                                <input type="number" id="price" class="input-field pl-10" placeholder="0">
+                    <div class="mb-6">
+                        <h3 class="section-title">Detail Produk</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="label">Nama Toko</label>
+                                <input type="text" id="storeName" class="input-field" placeholder="Cth: Wago Store" value="Wago Store">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="label">Nama Produk</label>
+                                    <input type="text" id="productName" class="input-field" placeholder="Cth: Sepatu Premium">
+                                </div>
+                                <div>
+                                    <label class="label">Nominal (Rp)</label>
+                                    <input type="number" id="price" class="input-field" placeholder="0">
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="label">Detail Transaksi</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <input type="text" id="refId" class="input-field" placeholder="Ref ID (Opsional)">
-                            <div class="relative">
+                    <div class="mb-6">
+                        <h3 class="section-title">Konfigurasi Transaksi</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="label">Ref ID (Unik)</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="refId" class="input-field font-mono text-xs" placeholder="AUTO-GEN">
+                                    <button onclick="generateRefId()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-3 rounded-xl transition-colors" title="Acak ID">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="label">Batas Waktu (Menit)</label>
                                 <input type="number" id="timer" class="input-field" value="15">
-                                <span class="absolute right-4 top-3 text-xs text-slate-400 font-bold">Menit</span>
                             </div>
                         </div>
-                        <button onclick="generateRefId()" class="text-[10px] text-indigo-500 font-bold mt-1 hover:underline">🎲 Generate Random Ref ID</button>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="section-title">Data Pelanggan (Opsional)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="label">WhatsApp</label>
+                                <input type="text" id="custWa" class="input-field" placeholder="0812...">
+                            </div>
+                            <div>
+                                <label class="label">Email</label>
+                                <input type="email" id="custEmail" class="input-field" placeholder="user@mail.com">
+                            </div>
+                        </div>
                     </div>
 
                     <div>
-                        <label class="label">Data Pelanggan (Opsional)</label>
-                        <div class="space-y-3">
-                            <input type="text" id="custWa" class="input-field" placeholder="WhatsApp (0812...)">
-                            <input type="email" id="custEmail" class="input-field" placeholder="Email Pelanggan">
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-100">
-                        <button onclick="toggleTech()" class="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-600">
-                            <span>⚙️ Konfigurasi Webhook & Redirect</span>
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <button onclick="toggleTech()" class="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider transition-colors">
+                            <span>⚙️ Advanced Settings (Webhook & Return)</span>
+                            <svg id="arrow-icon" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
-                        <div id="techFields" class="hidden space-y-3 mt-3">
-                            <input type="text" id="notifyUrl" class="input-field text-xs" placeholder="Webhook URL (Notify)">
-                            <input type="text" id="returnUrl" class="input-field text-xs" placeholder="Redirect URL (Return)">
+                        <div id="techFields" class="hidden space-y-4 mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <div>
+                                <label class="label">Webhook URL (Notify)</label>
+                                <input type="text" id="notifyUrl" class="input-field text-xs font-mono" placeholder="https://domain-kamu.com/api/callback">
+                            </div>
+                            <div>
+                                <label class="label">Return URL (Redirect)</label>
+                                <input type="text" id="returnUrl" class="input-field text-xs font-mono" placeholder="https://domain-kamu.com/sukses">
+                            </div>
                         </div>
                     </div>
 
                 </div>
             </div>
 
-            <div class="space-y-6">
-                <div class="bg-slate-900 p-6 rounded-3xl text-white shadow-2xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-20 pointer-events-none"></div>
-                    
-                    <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">PREVIEW TAGIHAN</h3>
-                    
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-slate-400 text-xs mb-1">Produk</p>
-                                <p id="prevProd" class="font-bold text-lg leading-tight">Belum diisi</p>
+            <div class="lg:col-span-5 space-y-6">
+                
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-1 shadow-2xl border border-slate-700/50">
+                    <div class="bg-slate-900/50 rounded-[1.8rem] p-6 text-white relative overflow-hidden h-full">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-[60px] opacity-20"></div>
+                        
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/10">
+                                <span class="text-xl">💳</span>
                             </div>
-                            <div class="text-right">
-                                <p class="text-slate-400 text-xs mb-1">Total</p>
-                                <p id="prevPrice" class="font-bold text-xl text-emerald-400">Rp 0</p>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Preview Tampilan</p>
+                                <p class="text-sm font-bold text-white">Ringkasan Pesanan</p>
                             </div>
                         </div>
-                        
-                        <div class="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                            <p class="text-[10px] text-slate-400 mb-1">Pelanggan</p>
-                            <div class="flex items-center gap-2 text-sm font-medium">
-                                <span id="prevWa">-</span> <span class="text-slate-600">|</span> <span id="prevEmail">-</span>
+
+                        <div class="space-y-4">
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                <p class="text-xs text-slate-400 mb-1">Produk</p>
+                                <p id="prevProd" class="font-bold text-lg text-white leading-tight">Produk</p>
+                            </div>
+                            
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs text-slate-400 mb-1">Total Tagihan</p>
+                                    <p id="prevPrice" class="font-bold text-2xl text-emerald-400 tracking-tight">Rp 0</p>
+                                </div>
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <div class="flex-1 bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <p class="text-[10px] text-slate-400">Ref ID</p>
+                                    <p id="prevRef" class="text-xs font-mono text-slate-300 truncate">-</p>
+                                </div>
+                                <div class="bg-white/5 p-3 rounded-xl border border-white/5 text-center min-w-[70px]">
+                                    <p class="text-[10px] text-slate-400">Timer</p>
+                                    <p id="prevTimer" class="text-xs font-bold text-slate-300">15m</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
-                    <label class="label">Link Invoice Anda</label>
-                    <textarea id="resultUrl" class="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-mono text-slate-600 break-all mb-4 focus:outline-none" readonly></textarea>
+                <div class="glass-panel p-6 rounded-[2rem] shadow-xl">
+                    <label class="label text-emerald-600">✨ Link Invoice Siap!</label>
+                    <div class="relative mb-4">
+                        <textarea id="resultUrl" class="w-full h-24 bg-slate-50 border-2 border-emerald-100 rounded-xl p-3 text-xs font-mono text-slate-600 focus:outline-none resize-none" readonly></textarea>
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="copyLink()" class="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white py-3 rounded-xl font-bold text-sm transition-all active:scale-95">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        <button onclick="copyLink()" class="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-slate-900/20">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Copy Link
                         </button>
-                        <button onclick="shareWa()" class="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-emerald-200">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                        <button onclick="shareWa()" class="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-emerald-500/30">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                             Kirim WA
                         </button>
                     </div>
-                    <a href="#" id="testLink" target="_blank" class="block text-center mt-4 text-xs font-bold text-indigo-500 hover:underline">Buka Link Invoice &rarr;</a>
+                    <a href="#" id="testLink" target="_blank" class="block text-center mt-6 text-xs font-bold text-slate-400 hover:text-indigo-500 transition-colors">Buka Link Invoice &rarr;</a>
                 </div>
+
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none z-50 text-sm font-medium">Link berhasil disalin!</div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-50 text-sm font-bold flex items-center gap-3 transform translate-y-10 border border-white/10">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span>Link berhasil disalin!</span>
+    </div>
 
     <script>
         // --- KONFIGURASI GLOBAL ---
-        // UPDATE: HARDCODE KE DOMAIN PAYMENT
         const BASE_URL = "https://payment-gateway-mutasi.vercel.app/";
         
-        // Elemen
+        // Elemen Input
         const inputs = ['storeName', 'productName', 'price', 'refId', 'timer', 'custWa', 'custEmail', 'notifyUrl', 'returnUrl'];
         
         // Event Listeners
@@ -134,12 +244,19 @@
 
         // Toggle Tech Config
         function toggleTech() {
-            document.getElementById('techFields').classList.toggle('hidden');
+            const el = document.getElementById('techFields');
+            const arrow = document.getElementById('arrow-icon');
+            el.classList.toggle('hidden');
+            if(el.classList.contains('hidden')) {
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                arrow.style.transform = 'rotate(180deg)';
+            }
         }
 
         // Generate Random Ref ID
         function generateRefId() {
-            const id = "INV-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+            const id = "INV-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
             document.getElementById('refId').value = id;
             updateLink();
         }
@@ -149,14 +266,11 @@
 
         // Core Function: Update Link
         function updateLink() {
-            const store = document.getElementById('storeName').value || "Toko Saya";
+            const store = document.getElementById('storeName').value || "Wago Store";
             const prod = document.getElementById('productName').value || "Produk";
             const price = document.getElementById('price').value || 0;
             const ref = document.getElementById('refId').value || "TRX-" + Date.now();
-            
-            // UPDATE: DEFAULT 15 MENIT
             const time = document.getElementById('timer').value || 15;
-            
             const wa = document.getElementById('custWa').value;
             const email = document.getElementById('custEmail').value;
             const notify = document.getElementById('notifyUrl').value;
@@ -165,8 +279,8 @@
             // Update Preview
             document.getElementById('prevProd').textContent = prod;
             document.getElementById('prevPrice').textContent = formatRupiah(price);
-            document.getElementById('prevWa').textContent = wa || "-";
-            document.getElementById('prevEmail').textContent = email || "-";
+            document.getElementById('prevRef').textContent = ref;
+            document.getElementById('prevTimer').textContent = time + "m";
 
             // Build URL
             const params = new URLSearchParams();
@@ -207,9 +321,9 @@
 
         function showToast(msg) {
             const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.classList.remove('opacity-0');
-            setTimeout(() => t.classList.add('opacity-0'), 3000);
+            t.querySelector('span').textContent = msg;
+            t.classList.remove('opacity-0', 'translate-y-10');
+            setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000);
         }
 
         // Init
