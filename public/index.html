@@ -39,6 +39,12 @@
         .dropdown-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: top; }
         .dropdown-open { opacity: 1; transform: scaleY(1); max-height: 300px; }
         .dropdown-closed { opacity: 0; transform: scaleY(0.9); max-height: 0; pointer-events: none; }
+        
+        /* QRIS Pattern Background */
+        .qris-pattern {
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -93,13 +99,13 @@
     <input type="hidden" id="customerEmail">
 
     <script>
-        // --- DATA BANK & LOGO (Sudah Diperbaiki Komanya) ---
+        // --- DATA BANK & LOGO ---
         const bankData = [
             { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
             { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
             { id: 'seabank', name: 'SeaBank', logo: 'https://i.ibb.co.com/wr7QqTcx/image.png' },
             { id: 'jago', name: 'Bank Jago', logo: 'https://i.ibb.co.com/tMdwhc2v/logo-color-3719629472.png' },
-            { id: 'neobank', name: 'Neo Bank', logo: 'https://i.ibb.co.com/7N0k3sNz/image.png' }
+            { id: 'neobank', name: 'Neo Bank', logo: 'https://i.ibb.co.com/WWB7ZSwK/image.png' }
         ];
 
         let state = { 
@@ -255,8 +261,6 @@
 
         async function processCheckout() {
             const btn = document.querySelector('#action-area button');
-            // Validasi: Jika Bank belum dipilih tapi container bank aktif
-            // --- UPDATE: Tambahkan 'neobank' ke daftar validasi ---
             if(state.selectedMethod !== 'qris' && !['bcava', 'bni', 'seabank', 'jago', 'neobank'].includes(state.selectedMethod)) {
                 showToast("Silakan pilih Bank tujuan!"); return;
             }
@@ -309,11 +313,22 @@
                 instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
             } else {
                 paymentDisplay = `
-                    <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 mb-6 w-full max-w-[280px]">
-                        <div class="bg-slate-900 text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest mb-4">SCAN QRIS</div>
-                        <img src="${apiData.qr_image}" class="w-full rounded-xl border-2 border-slate-50 shadow-sm">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 mx-auto mt-4 opacity-90">
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-6 w-full max-w-[280px] overflow-hidden">
+                        <div class="bg-[#bf1e2e] p-3 flex items-center justify-between">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 brightness-0 invert">
+                            <span class="text-white font-bold text-[10px] tracking-wider">National Standard</span>
+                        </div>
+                        
+                        <div class="p-5 flex flex-col items-center text-center qris-pattern bg-white">
+                            <h3 class="font-bold text-slate-900 text-lg uppercase leading-tight mb-1">WAGO SHOESPA CUCI SEPATU</h3>
+                            <p class="text-[10px] text-slate-500 mb-4 font-mono">NMID: ID1024363913731</p>
+                            
+                            <img src="${apiData.qr_image}" class="w-full aspect-square object-contain border-2 border-slate-900 rounded-lg p-1 bg-white">
+                            
+                            <p class="text-[9px] text-slate-400 mt-3">Dicetak oleh: GoPay</p>
+                        </div>
                     </div>
+
                     <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p>
                     <div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="cursor-pointer group flex items-center gap-2">
                          <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2>
