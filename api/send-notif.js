@@ -1,53 +1,100 @@
 export default async function handler(req, res) {
-    if (req.method !== 'GET') return res.status(405).send("Method Not Allowed");
+    if (req.method !== 'POST') return res.status(405).end();
 
-    const { data } = req.query; // Ambil data terenkripsi dari Link
+    const { type, data } = req.body;
+    
+    // Config
+    const token = process.env.TELE_TOKEN;
+    const chatId = process.env.TELE_CHAT_ID;
     const gasUrl = process.env.GAS_EMAIL_URL;
+    const DEFAULT_PIN = "123456";
 
-    if (!data || !gasUrl) return res.status(400).send("Invalid Link or Config");
+    // Auto-detect domain website Anda (agar link tombolnya benar)
+    const host = req.headers.host; 
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
 
-    try {
-        // 1. Decode Data (Base64 -> JSON)
-        const jsonStr = Buffer.from(data, 'base64').toString('utf-8');
-        const withdrawData = JSON.parse(jsonStr);
+    let telegramMsg = "";
+    let replyMarkup = null; // Untuk tombol
 
-        // 2. Panggil Google Script untuk Kirim Email ke User
-        await fetch(gasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                type: 'WITHDRAW_SUCCESS', 
-                data: withdrawData 
-            })
+    // --- 1. LOGIKA WITHDRAW (UPDATE UTAMA) ---
+    if (type === 'WITHDRAW') {
+        telegramMsg = `
+<b>💸 REQUEST CAIR SALDO</b>
+---------------------------
+<b>Toko:</b> ${data.store}
+<b>Nominal:</b> Rp ${parseInt(data.amount).toLocaleString('id-ID')}
+---------------------------
+<b>Bank:</b> ${data.bank}
+<b>Rek:</b> <code>${data.rek}</code>
+<b>A.N:</b> ${data.name}
+---------------------------
+<i>1. Silakan transfer manual ke rekening di atas.</i>
+<i>2. Jika sudah, klik tombol di bawah untuk notif user.</i>
+`;
+        
+        // Bungkus data untuk dikirim ke link konfirmasi
+        const wdPayload = JSON.stringify({
+            store: data.store,
+            email: data.email, // Email User (PENTING)
+            amount: parseInt(data.amount).toLocaleString('id-ID'),
+            bank: data.bank,
+            rek: data.rek,
+            name: data.name
         });
+        
+        // Enkripsi data jadi kode aneh (Base64) agar aman di URL
+        const encodedData = Buffer.from(wdPayload).toString('base64');
+        const approvalUrl = `${baseUrl}/api/confirm-withdraw?data=${encodedData}`;
 
-        // 3. Tampilkan Halaman Sukses ke Admin
-        res.setHeader('Content-Type', 'text/html');
-        return res.status(200).send(`
-            <html>
-            <head>
-                <title>Sukses</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    body { font-family: sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
-                    .card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 90%; }
-                    h1 { color: #34d399; margin-bottom: 10px; }
-                    p { color: #94a3b8; }
-                    .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #334155; color: white; text-decoration: none; border-radius: 10px; }
-                </style>
-            </head>
-            <body>
-                <div class="card">
-                    <h1>✅ Berhasil!</h1>
-                    <p>Status pencairan <b>${withdrawData.store}</b> telah diupdate.</p>
-                    <p>Email notifikasi "Sukses Cair" telah dikirim ke user.</p>
-                    <a href="javascript:window.close()" class="btn">Tutup Window</a>
-                </div>
-            </body>
-            </html>
-        `);
-
-    } catch (error) {
-        return res.status(500).send("Terjadi Kesalahan: " + error.message);
+        // Tombol Telegram
+        replyMarkup = {
+            inline_keyboard: [[
+                { text: "✅ SAYA SUDAH TRANSFER", url: approvalUrl }
+            ]]
+        };
     }
+
+    // --- LOGIKA LAIN (TETAP SAMA) ---
+    else if (type === 'REGISTER') {
+        telegramMsg = `<b>🆕 DAFTAR BARU</b>\nUser: ${data.store}\nEmail: ${data.email}\n✅ <i>PIN dikirim ke email.</i>`;
+    } 
+    else if (type === 'FORGOT_PIN') {
+        telegramMsg = `<b>🔑 LUPA PIN</b>\nUser: ${data.email}\n✅ <i>PIN Reset dikirim ke email.</i>`;
+    }
+    else if (type === 'DELETE_ACCOUNT') {
+        telegramMsg = `<b>⛔ HAPUS AKUN</b>\nUser: ${data.store}\nAlasan: ${data.reason}`;
+    }
+    else if (type === 'CREATE_INVOICE') {
+        telegramMsg = `<b>🧾 INVOICE BARU</b>\nToko: ${data.store}\nTotal: ${data.price}\nLink: ${data.url}`;
+    }
+
+    // --- EKSEKUSI ---
+    
+    // 1. Kirim Telegram (Dengan Tombol jika ada)
+    if (token && chatId && telegramMsg) {
+        const payload = { chat_id: chatId, text: telegramMsg, parse_mode: 'HTML', disable_web_page_preview: true };
+        if (replyMarkup) payload.reply_markup = replyMarkup; // Pasang tombol
+
+        try {
+            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) { console.error("Tele Error:", e); }
+    }
+
+    // 2. Kirim Email (Langsung) untuk tipe NON-Withdraw
+    // Withdraw dikirim nanti, setelah admin klik tombol
+    const directEmailTypes = ['REGISTER', 'FORGOT_PIN', 'DELETE_ACCOUNT', 'CREATE_INVOICE'];
+    if (gasUrl && directEmailTypes.includes(type) && data.email) {
+        try {
+            await fetch(gasUrl, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: type, data: data })
+            });
+        } catch (e) { console.error("GAS Error:", e); }
+    }
+
+    return res.status(200).json({ status: 'sent' });
 }
