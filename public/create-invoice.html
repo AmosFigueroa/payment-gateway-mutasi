@@ -125,15 +125,51 @@
         </div>
     </div>
 
-    <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="modern-card p-8 w-full max-w-[420px] relative modal-box"><button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3></div>
-        <div class="space-y-4">
-            <div><label class="input-label">Nominal</label><input type="number" id="wd-amount" class="input-field" placeholder="Min 10.000"></div>
-            <div><label class="input-label">Bank</label><select id="wd-bank" class="input-field"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>DANA</option><option>GoPay</option></select></div>
-            <div><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field"></div>
-            <div><label class="input-label">Atas Nama</label><input type="text" id="wd-name" class="input-field"></div>
+    <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all">
+        <div class="modern-card p-8 w-full max-w-[420px] relative modal-box overflow-hidden">
+            <button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            
+            <div id="wd-step-1">
+                <div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3><p class="text-slate-500 text-xs">Isi detail rekening tujuan pencairan.</p></div>
+                <div class="space-y-4">
+                    <div><label class="input-label">Nominal (Min 10.000)</label><input type="number" id="wd-amount" class="input-field" placeholder="Contoh: 50000"></div>
+                    <div><label class="input-label">Bank / E-Wallet</label><select id="wd-bank" class="input-field"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>DANA</option><option>GoPay</option><option>OVO</option><option>ShopeePay</option></select></div>
+                    <div><label class="input-label">Nomor Rekening</label><input type="number" id="wd-rek" class="input-field" placeholder="Nomor Rekening/HP"></div>
+                    <div><label class="input-label">Atas Nama</label><input type="text" id="wd-name" class="input-field" placeholder="Nama Pemilik Rekening"></div>
+                </div>
+                <button onclick="reviewWithdraw()" class="btn-main w-full py-4 mt-8 bg-indigo-600 hover:bg-indigo-700">LANJUTKAN</button>
+            </div>
+
+            <div id="wd-step-2" class="hidden">
+                <div class="mb-6 text-center"><div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🧐</div><h3 class="text-xl font-extrabold text-slate-900">Cek Detail Pencairan</h3><p class="text-slate-500 text-xs">Pastikan data di bawah ini benar.</p></div>
+                
+                <div class="bg-slate-50 rounded-2xl p-5 border border-dashed border-indigo-200 text-sm space-y-3 relative">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 font-bold text-[10px] uppercase">Nominal</span>
+                        <span class="font-extrabold text-slate-900" id="review-amount">Rp 0</span>
+                    </div>
+                    <div class="w-full h-px bg-slate-200"></div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 font-bold text-[10px] uppercase">Bank</span>
+                        <span class="font-bold text-slate-700" id="review-bank">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 font-bold text-[10px] uppercase">No. Rekening</span>
+                        <span class="font-bold text-slate-700 font-mono bg-white px-2 rounded border border-slate-200" id="review-rek">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 font-bold text-[10px] uppercase">Atas Nama</span>
+                        <span class="font-bold text-slate-700" id="review-name">-</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-8">
+                    <button onclick="backToStep1()" class="btn-sec py-3 text-xs">Ubah Data</button>
+                    <button onclick="submitWithdraw()" class="btn-main py-3 bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 text-xs">YA, KONFIRMASI</button>
+                </div>
+            </div>
+
         </div>
-        <button onclick="submitWithdraw()" class="btn-main w-full py-4 mt-8 bg-indigo-600">Kirim Pengajuan</button></div>
     </div>
 
     <div id="forgot-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box text-center"><button onclick="closeModal('forgot-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-amber-100 text-3xl">🔑</div><h3 class="text-2xl font-extrabold text-slate-900 mb-2">Reset PIN</h3><p class="text-slate-500 text-sm mb-6">Masukkan email Anda.</p><input type="email" id="forgot-email" class="input-field" placeholder="email@toko.com"><button onclick="submitForgot()" class="btn-main w-full py-4 mt-6 bg-slate-800">KIRIM PIN BARU</button></div></div>
@@ -209,7 +245,7 @@
 
         function logout() { if(confirm("Keluar dari akun?")) { currentUser = null; location.reload(); } }
 
-        // --- INVOICE LOGIC (UI UPDATE WITH PRODUCT ICON) ---
+        // --- INVOICE LOGIC ---
         function addItem() { 
             if (items.length >= 10) return showToast("Maksimal 10 barang!", "✋"); 
             items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); 
@@ -242,11 +278,11 @@
 
             const wrapper = document.getElementById('items-wrapper');
             
-            // UI BARU DENGAN IKON PRODUK
+            // UI ITEM DENGAN IKON & LAYOUT RAPI
             wrapper.innerHTML = items.map((i,x) => `
                 <div class="flex gap-3 items-start mb-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm animate-scaleIn relative overflow-hidden group">
                     <span class="absolute top-0 left-0 bg-slate-100 text-[10px] font-bold text-slate-400 px-2 py-1 rounded-br-lg z-10">${x+1}</span>
-
+                    
                     <div class="w-12 h-12 mt-2 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-100 flex-shrink-0 shadow-sm">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
@@ -320,6 +356,36 @@
             showToast("Link Siap!", "✨");
         }
 
+        // --- NEW WITHDRAW LOGIC (2 STEPS) ---
+        function openWithdraw() {
+            document.getElementById('withdraw-modal').classList.remove('hidden');
+            backToStep1(); 
+        }
+
+        function reviewWithdraw() {
+            const amount = document.getElementById('wd-amount').value;
+            const bank = document.getElementById('wd-bank').value;
+            const rek = document.getElementById('wd-rek').value;
+            const name = document.getElementById('wd-name').value;
+
+            if(!amount || !rek || !name) return showToast("Lengkapi semua data!", "⚠️");
+            if(parseInt(amount) < 10000) return showToast("Minimal Rp 10.000", "⚠️");
+            if(parseInt(amount) > currentUser.balance) return showToast("Saldo tidak cukup", "💸");
+
+            document.getElementById('review-amount').innerText = "Rp " + parseInt(amount).toLocaleString('id-ID');
+            document.getElementById('review-bank').innerText = bank;
+            document.getElementById('review-rek').innerText = rek;
+            document.getElementById('review-name').innerText = name;
+
+            document.getElementById('wd-step-1').classList.add('hidden');
+            document.getElementById('wd-step-2').classList.remove('hidden');
+        }
+
+        function backToStep1() {
+            document.getElementById('wd-step-2').classList.add('hidden');
+            document.getElementById('wd-step-1').classList.remove('hidden');
+        }
+
         async function submitWithdraw() {
             if(!currentUser) return;
             const amount = parseInt(document.getElementById('wd-amount').value);
@@ -327,16 +393,22 @@
             const rek = document.getElementById('wd-rek').value;
             const name = document.getElementById('wd-name').value;
 
-            if(!amount || !rek || !name) return showToast("Data kurang lengkap", "⚠️");
-            if(amount < 10000) return showToast("Minimal Rp 10.000", "⚠️");
-            if(amount > currentUser.balance) return showToast("Saldo tidak cukup", "💸");
+            const btn = document.querySelector('#wd-step-2 button.bg-emerald-500');
+            const originalText = btn.innerText;
+            btn.innerText = "MENGIRIM..."; btn.disabled = true;
 
             const res = await fetch('/api/send-notif', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ type: 'WITHDRAW', data: { store: currentUser.store, email: currentUser.email, amount, bank, rek, name } })
             });
 
-            if(res.ok) { showToast("Request terkirim!", "✅"); closeModal('withdraw-modal'); }
+            if(res.ok) {
+                showToast("Request terkirim!", "✅");
+                closeModal('withdraw-modal');
+                currentUser.balance -= amount; // Kurangi saldo visual
+                updateUI();
+            } else { showToast("Gagal kirim request.", "❌"); }
+            btn.innerText = originalText; btn.disabled = false;
         }
 
         async function submitForgot() {
@@ -348,7 +420,6 @@
 
         function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Disalin!", "📋"); }
         function shareWa() { const url = document.getElementById("resultUrl").value; window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Tagihan:%20${url}`, '_blank'); }
-        function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
         function openForgotPin() { document.getElementById('forgot-modal').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
