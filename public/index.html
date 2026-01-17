@@ -16,7 +16,6 @@
     </script>
 
     <style>
-        /* DESAIN ASLI (GLASSMORPHISM) */
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background-color: #0f172a;
@@ -28,14 +27,14 @@
         .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes fadeEnter { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .receipt-bottom {
-            background: linear-gradient(45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%), 
-                        linear-gradient(-45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%);
-            background-size: 16px 32px; background-position: 0 100%; height: 16px;
-        }
-        .qris-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 12px 12px; }
         .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
-        @keyframes successPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes successPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .receipt-cut {
+            background-image: radial-gradient(circle at 10px 0, transparent 8px, #f8fafc 9px);
+            background-size: 20px 10px;
+            background-repeat: repeat-x;
+            height: 10px; width: 100%;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -119,38 +118,22 @@
         window.onload = function() {
             applyDomainSettings();
             const params = new URLSearchParams(window.location.search);
-            
             state.returnUrl = params.get('return') || document.referrer || "";
             state.notifyUrl = params.get('notify') || "";
             state.refId = params.get('ref_id') || "";
             if(params.get('time')) state.timeoutMinutes = parseInt(params.get('time'));
-            if(params.get('store')) {
-                document.getElementById('header-title').innerText = decodeURIComponent(params.get('store'));
-            }
+            if(params.get('store')) document.getElementById('header-title').innerText = decodeURIComponent(params.get('store'));
 
-            // --- PERBAIKAN LOGIKA DATA ---
             const itemsEncoded = params.get('items');
-            
             if (itemsEncoded) {
-                // 1. Coba Decode Mode Multi-Item
                 try {
                     const itemsJson = atob(itemsEncoded);
                     state.items = JSON.parse(itemsJson);
-                    // Hitung total ulang dari items untuk validasi
                     state.totalAmount = state.items.reduce((sum, item) => sum + (parseInt(item.p) || 0), 0);
-                } catch (e) {
-                    console.error("Gagal decode items", e);
-                    fallbackSingleItem(params);
-                }
-            } else {
-                // 2. Fallback Mode Single Item (Link Lama)
-                fallbackSingleItem(params);
-            }
+                } catch (e) { fallbackSingleItem(params); }
+            } else { fallbackSingleItem(params); }
 
-            // Pastikan tidak 0 jika params price ada
-            if (state.totalAmount === 0 && params.get('price')) {
-                state.totalAmount = parseInt(params.get('price'));
-            }
+            if (state.totalAmount === 0 && params.get('price')) state.totalAmount = parseInt(params.get('price'));
 
             document.getElementById('customerWa').value = params.get('wa') || "-";
             document.getElementById('customerEmail').value = params.get('email') || "guest@mail.com";
@@ -168,7 +151,6 @@
         window.selectMethod = (methodId) => { state.selectedMethod = methodId; updateVisualSelection(); };
 
         function updateVisualSelection() {
-            // Reset Semua
             bankData.forEach(bank => {
                 const el = document.getElementById(`method-${bank.id}`);
                 const radio = document.getElementById(`radio-${bank.id}`);
@@ -185,7 +167,6 @@
                 qrisRadio.className = "w-5 h-5 rounded-full border-2 border-slate-300";
             }
 
-            // Set Active (Dark Mode Style untuk Active)
             if (state.selectedMethod === 'qris') {
                 if(qrisEl && qrisRadio) {
                     qrisEl.className = "cursor-pointer relative p-4 rounded-2xl transition-all duration-300 bg-slate-800 text-white ring-2 ring-slate-800 shadow-xl border-transparent";
@@ -207,7 +188,6 @@
             const minTransfer = 50000; 
             const showBank = state.totalAmount >= minTransfer;
 
-            // RENDER ITEM LIST (Support Multi & Single)
             const itemsHtml = state.items.map(i => `
                 <div class="flex justify-between text-xs py-2 border-b border-dashed border-slate-100 last:border-0">
                     <span class="text-slate-600 font-medium truncate max-w-[65%]">${i.n}</span>
@@ -256,10 +236,7 @@
             
             actionArea.innerHTML = `<button onclick="processCheckout()" class="w-full relative overflow-hidden bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] group ring-1 ring-slate-900"><span class="relative flex items-center justify-center gap-2 text-sm uppercase tracking-wide">Bayar Sekarang <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></span></button>`;
             
-            // JALANKAN INI AGAR TAMPILAN DEFAULT QRIS AKTIF
-            setTimeout(() => {
-                updateVisualSelection();
-            }, 100);
+            setTimeout(() => { updateVisualSelection(); }, 100);
         }
 
         async function processCheckout() {
@@ -267,32 +244,16 @@
             if(state.selectedMethod !== 'qris' && !['bcava', 'bni', 'seabank', 'jago', 'neobank'].includes(state.selectedMethod)) {
                 showAlert("Pilih Metode", "Silakan pilih Bank atau QRIS tujuan."); return;
             }
-            
-            // CEK TOTAL AMOUNT
             if (!state.totalAmount || state.totalAmount <= 0) {
-                showAlert("Error Data", "Total tagihan tidak valid (Rp 0). Mohon buat ulang link invoice.");
-                return;
+                showAlert("Error Data", "Total tagihan tidak valid (Rp 0). Mohon buat ulang link invoice."); return;
             }
 
             btn.innerHTML = `<span class="flex items-center gap-2 justify-center"><svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> MEMPROSES...</span>`;
             btn.disabled = true;
             
             try {
-                // FORMAT NAMA PRODUK: GABUNGKAN SEMUA JADI SATU STRING
-                const productSummary = state.items.length > 1 
-                    ? `${state.items[0].n} & ${state.items.length - 1} item lainnya`
-                    : state.items[0].n;
-
-                const data = { 
-                    product_name: productSummary, 
-                    price: state.totalAmount, 
-                    customer_contact: document.getElementById('customerWa').value, 
-                    customer_email: document.getElementById('customerEmail').value, 
-                    method: state.selectedMethod, 
-                    ref_id: state.refId, 
-                    notify_url: state.notifyUrl 
-                };
-
+                const productSummary = state.items.length > 1 ? `${state.items[0].n} & ${state.items.length - 1} item lainnya` : state.items[0].n;
+                const data = { product_name: productSummary, price: state.totalAmount, customer_contact: document.getElementById('customerWa').value, customer_email: document.getElementById('customerEmail').value, method: state.selectedMethod, ref_id: state.refId, notify_url: state.notifyUrl };
                 const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                 const d = await res.json();
                 
@@ -300,20 +261,10 @@
                     state.totalAmount = d.total_pay; 
                     if(d.qris_meta) { state.activeQrisData = { image: d.qr_image, name: d.qris_meta.name, nmid: d.qris_meta.nmid }; }
                     renderStep2(d); 
-                } 
-                else { 
-                    showAlert("Gagal", d.error || "Gagal memproses pesanan."); 
-                    btn.innerHTML = "COBA LAGI";
-                    btn.disabled = false;
-                }
-            } catch(e) { 
-                showAlert("Koneksi Error", "Cek koneksi internet Anda."); 
-                btn.innerHTML = "COBA LAGI";
-                btn.disabled = false;
-            }
+                } else { showAlert("Gagal", d.error || "Gagal memproses pesanan."); btn.innerHTML = "COBA LAGI"; btn.disabled = false; }
+            } catch(e) { showAlert("Koneksi Error", "Cek koneksi internet Anda."); btn.innerHTML = "COBA LAGI"; btn.disabled = false; }
         }
 
-        // --- STEP 2 & 3 (TETAP SAMA) ---
         function renderStep2(apiData) {
             state.step = 2;
             const content = document.getElementById('app-content');
@@ -324,51 +275,12 @@
 
             if (apiData.payment_details && apiData.payment_details.type === 'bank') {
                 const bankInfo = bankData.find(b => b.id === apiData.payment_details.bank_code) || { logo: '', name: 'Bank Transfer' };
-                paymentDisplay = `
-                    <div class="w-full max-w-[320px] space-y-4 mb-4">
-                        <div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-left relative overflow-hidden">
-                           <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
-                               <div class="w-8 h-8 rounded-lg border border-slate-100 p-1 flex items-center justify-center"><img src="${bankInfo.logo}" class="w-full h-full object-contain"></div>
-                               <span class="font-bold text-slate-700 text-sm">${bankInfo.name}</span>
-                           </div>
-                           <div onclick="copyToClipboard('${apiData.payment_details.acc_no}', 'No. Rekening Disalin!')" class="group bg-slate-50 hover:bg-slate-100 p-4 rounded-2xl border border-slate-200 flex justify-between items-center cursor-pointer transition-colors mb-2 relative">
-                               <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">No. Rekening</p><p class="text-lg font-mono font-bold text-slate-800 tracking-widest">${apiData.payment_details.acc_no}</p></div>
-                               <div class="text-slate-400 group-hover:text-blue-500 bg-white p-2 rounded-xl shadow-sm border border-slate-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
-                           </div>
-                           <p class="text-xs text-slate-500 font-medium pl-1">a.n <span class="font-bold text-slate-700">${apiData.payment_details.acc_name}</span></p>
-                        </div>
-                        <div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="group bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-center cursor-pointer hover:border-blue-200 transition-all relative">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Pembayaran</p>
-                            <div class="flex items-center justify-center gap-2 mb-2"><h2 class="text-3xl font-extrabold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
-                            <div class="inline-block bg-amber-50 text-amber-600 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-100">⚠️ TRANSFER TEPAT SAMPAI 3 DIGIT TERAKHIR</div>
-                        </div>
-                    </div>`;
-                instructionText = `<p class="text-xs text-slate-500 mt-4 max-w-[280px] leading-relaxed">Silakan transfer ke rekening di atas. Sistem akan memverifikasi otomatis dalam 1-5 menit.</p>`;
+                paymentDisplay = `<div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-left relative overflow-hidden mb-4"><div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50"><div class="w-8 h-8 rounded-lg border border-slate-100 p-1 flex items-center justify-center"><img src="${bankInfo.logo}" class="w-full h-full object-contain"></div><span class="font-bold text-slate-700 text-sm">${bankInfo.name}</span></div><div onclick="copyToClipboard('${apiData.payment_details.acc_no}', 'No. Rekening Disalin!')" class="group bg-slate-50 hover:bg-slate-100 p-4 rounded-2xl border border-slate-200 flex justify-between items-center cursor-pointer transition-colors mb-2 relative"><div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">No. Rekening</p><p class="text-lg font-mono font-bold text-slate-800 tracking-widest">${apiData.payment_details.acc_no}</p></div><div class="text-slate-400 group-hover:text-blue-500 bg-white p-2 rounded-xl shadow-sm border border-slate-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div></div><p class="text-xs text-slate-500 font-medium pl-1">a.n <span class="font-bold text-slate-700">${apiData.payment_details.acc_name}</span></p></div><div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="group bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-center cursor-pointer hover:border-blue-200 transition-all relative"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Pembayaran</p><div class="flex items-center justify-center gap-2 mb-2"><h2 class="text-3xl font-extrabold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div><div class="inline-block bg-amber-50 text-amber-600 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-100">⚠️ TRANSFER TEPAT SAMPAI 3 DIGIT TERAKHIR</div></div>`;
             } else {
-                const merchantName = apiData.qris_meta?.name || "Merchant QRIS";
-                const merchantNMID = apiData.qris_meta?.nmid || "-";
-                paymentDisplay = `
-                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-4 w-full max-w-[280px] overflow-hidden transform transition-all hover:scale-[1.02]">
-                        <div class="bg-[#bf1e2e] p-3 flex items-center justify-between relative overflow-hidden"><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 brightness-0 invert relative z-10"><span class="text-white font-bold text-[10px] tracking-wider relative z-10">National Standard</span></div>
-                        <div class="p-5 flex flex-col items-center text-center qris-pattern bg-white">
-                            <h3 class="font-bold text-slate-900 text-lg uppercase leading-tight mb-1 tracking-tight">${merchantName}</h3>
-                            <p class="text-[10px] text-slate-500 mb-4 font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">NMID: ${merchantNMID}</p>
-                            <img src="${apiData.qr_image}" class="w-full aspect-square object-contain border-2 border-slate-900 rounded-lg p-1 bg-white shadow-sm">
-                            <p class="text-[9px] text-slate-400 mt-3 font-medium">Dicetak oleh: GoPay</p>
-                        </div>
-                    </div>
-                    <button onclick="downloadQris()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-600 font-bold py-2 px-4 rounded-xl border border-slate-200 text-xs shadow-sm mb-6 transition-all active:scale-95"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> SIMPAN GAMBAR QRIS</button>
-                    <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p>
-                    <div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="cursor-pointer group flex items-center gap-2"><h2 class="text-4xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>`;
+                paymentDisplay = `<div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-4 w-full max-w-[280px] overflow-hidden transform transition-all hover:scale-[1.02]"><div class="bg-[#bf1e2e] p-3 flex items-center justify-between relative overflow-hidden"><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-6 brightness-0 invert relative z-10"><span class="text-white font-bold text-[10px] tracking-wider relative z-10">National Standard</span></div><div class="p-5 flex flex-col items-center text-center qris-pattern bg-white"><h3 class="font-bold text-slate-900 text-lg uppercase leading-tight mb-1 tracking-tight">${apiData.qris_meta?.name || "Merchant"}</h3><p class="text-[10px] text-slate-500 mb-4 font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">NMID: ${apiData.qris_meta?.nmid || "-"}</p><img src="${apiData.qr_image}" class="w-full aspect-square object-contain border-2 border-slate-900 rounded-lg p-1 bg-white shadow-sm"><p class="text-[9px] text-slate-400 mt-3 font-medium">Dicetak oleh: GoPay</p></div></div><button onclick="downloadQris()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-600 font-bold py-2 px-4 rounded-xl border border-slate-200 text-xs shadow-sm mb-6 transition-all active:scale-95"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> SIMPAN GAMBAR QRIS</button><p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p><div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="cursor-pointer group flex items-center gap-2"><h2 class="text-4xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>`;
             }
 
-            content.innerHTML = `
-                <div class="px-4 py-6 text-center fade-enter flex flex-col items-center">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold mb-6 border border-red-100 animate-pulse"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1">--:--</span></div>
-                    ${paymentDisplay}
-                    ${instructionText}
-                    <div class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-400 mt-6">ORDER ID: ${apiData.order_id}</div>
-                </div>`;
+            content.innerHTML = `<div class="px-4 py-6 text-center fade-enter flex flex-col items-center"><div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold mb-6 border border-red-100 animate-pulse"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1">--:--</span></div>${paymentDisplay}${instructionText}<div class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-400 mt-6">ORDER ID: ${apiData.order_id}</div></div>`;
             
             actionArea.innerHTML = `<button onclick="confirmCancel()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
             startTimer(state.timeoutMinutes * 60);
@@ -437,33 +349,48 @@
             state.step = 3;
             const content = document.getElementById('app-content');
             const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             const actionArea = document.getElementById('action-area');
-            const methodName = state.selectedMethod === 'qris' ? 'QRIS Otomatis' : 'Bank Transfer';
             actionArea.classList.remove('hidden');
+
+            const itemsList = state.items.map(i => `
+                <div class="flex justify-between text-xs text-slate-600 mb-1">
+                    <span>${i.n}</span>
+                    <span class="font-bold">Rp ${i.p.toLocaleString('id-ID')}</span>
+                </div>
+            `).join('');
 
             content.innerHTML = `
                 <div class="p-6 success-pop h-full flex flex-col items-center justify-center">
-                    <div class="w-full bg-white shadow-2xl shadow-emerald-200/50 rounded-t-[2rem] overflow-hidden relative border-x border-t border-white/80">
-                        <div class="h-3 bg-gradient-to-r from-emerald-400 to-emerald-500"></div>
-                        <div class="p-8 text-center border-b border-dashed border-slate-200 bg-white relative z-10 pb-10">
-                            <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm relative"><svg class="w-16 h-16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg></div>
-                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">PEMBAYARAN LUNAS!</h2>
-                            <p class="text-sm text-slate-500 mt-3 px-4 leading-relaxed">Terima kasih, pembayaran Anda telah berhasil kami verifikasi secara otomatis.</p>
-                            <p class="text-[10px] text-slate-400 mt-6 animate-pulse bg-slate-50 inline-block px-3 py-1 rounded-full border border-slate-100">Otomatis kembali dalam <span id="redirect-timer" class="font-bold text-slate-600">5</span> detik</p>
+                    <div class="w-full bg-white shadow-2xl shadow-emerald-200/50 rounded-2xl overflow-hidden relative border border-slate-100">
+                        <div class="h-2 bg-emerald-500 w-full"></div>
+                        <div class="p-8 text-center border-b border-dashed border-slate-200 bg-white relative z-10">
+                            <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+                                <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">PEMBAYARAN BERHASIL</h2>
+                            <p class="text-xs text-slate-500 mt-2">Terima kasih, pesanan Anda telah lunas.</p>
                         </div>
-                        <div class="p-6 bg-slate-50/80 relative">
-                            <div class="flex justify-between items-center mb-5"><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Paid</span><span class="text-2xl font-extrabold text-slate-900">Rp ${state.totalAmount.toLocaleString('id-ID')}</span></div>
-                            <div class="space-y-3 pt-4 border-t border-slate-200/60 text-sm text-slate-600">
-                                <div class="flex justify-between items-center"><span class="font-medium">Method</span><span class="font-bold text-slate-800 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ${methodName}</span></div>
-                                <div class="flex justify-between"><span>Date</span><span class="font-bold text-slate-800">${now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
-                                <div class="flex justify-between items-center pt-1"><span>Ref. ID</span><span class="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">${state.refId || '-'}</span></div>
+                        <div class="p-6 bg-slate-50">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-xs"><span class="text-slate-400">Tanggal</span><span class="font-bold text-slate-700">${dateStr}</span></div>
+                                <div class="flex justify-between text-xs"><span class="text-slate-400">ID Transaksi</span><span class="font-mono font-bold text-slate-700">${state.refId || '-'}</span></div>
+                                <div class="my-4 border-t border-slate-200 pt-4">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Rincian Item</p>
+                                    ${itemsList}
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                                    <span class="font-bold text-slate-900">Total Bayar</span>
+                                    <span class="text-xl font-extrabold text-emerald-600">Rp ${state.totalAmount.toLocaleString('id-ID')}</span>
+                                </div>
                             </div>
                         </div>
+                        <div class="receipt-cut w-full absolute bottom-0 left-0"></div>
                     </div>
-                    <div class="w-full receipt-bottom opacity-100 z-10 relative mt-[-1px]"></div>
+                    <p class="text-[10px] text-slate-400 mt-6 animate-pulse bg-slate-50 inline-block px-3 py-1 rounded-full border border-slate-100">Otomatis kembali dalam <span id="redirect-timer" class="font-bold text-slate-600">5</span> detik</p>
                 </div>`;
             
-            let backBtnText = state.storeName && state.storeName !== "Wago Store" ? "Kembali ke " + state.storeName : "Kembali ke Beranda";
+            let backBtnText = "Kembali ke Beranda";
             actionArea.innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-sm tracking-wide active:scale-[0.98]">${backBtnText}</button>`;
 
             let seconds = 5;
@@ -471,17 +398,18 @@
                 seconds--;
                 const timerElement = document.getElementById('redirect-timer');
                 if (timerElement) timerElement.innerText = seconds;
-                if (seconds <= 0) { clearInterval(redirectInterval); if(state.returnUrl) window.location.href = state.returnUrl; }
+                if (seconds <= 0) {
+                    clearInterval(redirectInterval);
+                    if(state.returnUrl) window.location.href = state.returnUrl;
+                }
             }, 1000);
         }
 
         function confirmCancel() { if(state.step === 1) { window.location.href = state.returnUrl; return; } showConfirm("Batalkan Transaksi?", "Sesi pembayaran ini akan dihentikan.", () => { document.getElementById('main-container').classList.add('fade-exit'); setTimeout(() => location.reload(), 350); }); }
         function showConfirm(title, msg, onConfirm) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg; document.getElementById('modal-actions').classList.remove('hidden'); document.getElementById('modal-alert-action').classList.add('hidden'); document.getElementById('modal-confirm-btn').onclick = onConfirm; openModal(); }
         function showAlert(title, msg) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg; document.getElementById('modal-actions').classList.add('hidden'); document.getElementById('modal-alert-action').classList.remove('hidden'); openModal(); }
-        // MODAL FUNCTIONS
         function openModal() { const m = document.getElementById('custom-modal'); m.classList.remove('hidden'); }
         function closeModal() { const m = document.getElementById('custom-modal'); m.classList.add('hidden'); }
-        
         function showToast(message) { const existing = document.getElementById('custom-toast'); if (existing) existing.remove(); const t = document.createElement('div'); t.id = 'custom-toast'; t.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 border border-slate-700/50'; t.innerHTML = `<div class="bg-emerald-500 rounded-full p-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg></div><span class="font-medium text-sm">${message}</span>`; document.body.appendChild(t); requestAnimationFrame(() => t.classList.remove('translate-y-[-100px]', 'opacity-0')); setTimeout(() => { t.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 3000); }
         window.copyToClipboard = (text, msg = 'Teks disalin!') => { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => showToast(msg)); } else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast(msg); } };
     </script>
