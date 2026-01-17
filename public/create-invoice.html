@@ -130,18 +130,18 @@
             <div><label class="input-label">Bank</label><select id="wd-bank" class="input-field"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>DANA</option><option>GoPay</option></select></div>
             <div><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field"></div>
             <div><label class="input-label">Atas Nama</label><input type="text" id="wd-name" class="input-field"></div>
-            </div>
+        </div>
         <button onclick="submitWithdraw()" class="btn-main w-full py-4 mt-8 bg-indigo-600">Kirim Pengajuan</button></div>
     </div>
 
     <div id="forgot-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"><div class="modern-card p-8 w-full max-w-[420px] relative modal-box text-center"><button onclick="closeModal('forgot-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-amber-100 text-3xl">🔑</div><h3 class="text-2xl font-extrabold text-slate-900 mb-2">Reset PIN</h3><p class="text-slate-500 text-sm mb-6">Masukkan email Anda.</p><input type="email" id="forgot-email" class="input-field" placeholder="email@toko.com"><button onclick="submitForgot()" class="btn-main w-full py-4 mt-6 bg-slate-800">KIRIM PIN BARU</button></div></div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-8 py-4 rounded-full opacity-0 pointer-events-none transition-all duration-300 text-sm font-bold transform translate-y-10 z-[100] shadow-2xl flex items-center gap-3 border border-white/10"><span id="toast-icon">🔔</span><span id="toast-msg">Notification</span></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-8 py-4 rounded-full opacity-0 pointer-events-none transition-all duration-500 text-sm font-bold transform translate-y-10 z-[100] shadow-2xl flex items-center gap-4 border border-white/10 ring-1 ring-white/10"><span id="toast-icon" class="text-xl">🔔</span><span id="toast-msg">Notification</span></div>
 
     <script>
         const BASE_URL = window.location.origin + "/"; 
         let items = []; 
-        let currentUser = null; // Menyimpan data user yang login
+        let currentUser = null; 
 
         // --- AUTH SYSTEM (DATABASE) ---
 
@@ -161,7 +161,6 @@
 
             btn.innerText = "MENDAFTAR..."; btn.disabled = true;
             try {
-                // Register ke DB
                 const res = await fetch('/api/user', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ action: 'register', store, email, wa, pin })
@@ -169,18 +168,17 @@
                 const data = await res.json();
                 
                 if(res.ok) {
-                    // Kirim Notif Telegram & Email (PIN Acak akan digenerate backend)
                     await fetch('/api/send-notif', { 
                         method:'POST', headers:{'Content-Type':'application/json'}, 
                         body: JSON.stringify({ type:'REGISTER', data: {store, email, wa} }) 
                     });
                     
-                    alert("Berhasil! Silakan cek Email untuk PIN Login.");
+                    showToast("Berhasil! Cek Email untuk PIN.", "✅");
                     toggleRegister(false);
                 } else {
-                    alert(data.error);
+                    showToast(data.error, "❌");
                 }
-            } catch(e) { alert("Error koneksi"); }
+            } catch(e) { showToast("Gagal terhubung ke server", "⚠️"); }
             btn.innerText = "DAFTAR SEKARANG"; btn.disabled = false;
         }
 
@@ -193,7 +191,6 @@
 
             btn.innerText = "MEMVERIFIKASI..."; btn.disabled = true;
             try {
-                // Login ke DB
                 const res = await fetch('/api/user', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ action: 'login', email, pin })
@@ -201,7 +198,7 @@
                 const resp = await res.json();
 
                 if(res.ok) {
-                    currentUser = resp.data; // Simpan data user real
+                    currentUser = resp.data; 
                     document.getElementById('login-overlay').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     updateUI();
@@ -209,7 +206,7 @@
                 } else {
                     showToast(resp.error, "❌");
                 }
-            } catch(e) { showToast("Gagal login", "⚠️"); }
+            } catch(e) { showToast("Gagal login: " + e.message, "⚠️"); }
             btn.innerText = "MASUK DASHBOARD"; btn.disabled = false;
         }
 
@@ -277,18 +274,16 @@
             const prodName = items.length + " Items";
             const refId = "INV-" + Date.now();
             
-            // 1. Generate Link Frontend
             const params = new URLSearchParams({ store: currentUser.store, price: total, items: itemsEncoded, prod: prodName, ref_id: refId, wa, email });
             const finalUrl = `${BASE_URL}?${params.toString()}`;
 
             document.getElementById('resultUrl').value = finalUrl;
             document.getElementById('result-area').classList.remove('hidden');
 
-            // 2. SIMPAN KE DB (PENTING: merchant_email)
             await fetch('/api/checkout', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    merchant_email: currentUser.email, // <-- KUNCI MULTI USER
+                    merchant_email: currentUser.email, 
                     store_name: currentUser.store,
                     product_name: prodName,
                     price: total,
@@ -299,7 +294,6 @@
                 })
             });
 
-            // 3. Notif Telegram
             fetch('/api/send-notif', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ type: 'CREATE_INVOICE', data: { store: currentUser.store, price: total.toLocaleString('id-ID'), prod: prodName, url: finalUrl } })
@@ -308,7 +302,6 @@
             showToast("Link Siap!", "✨");
         }
 
-        // --- FEATURES ---
         async function submitWithdraw() {
             if(!currentUser) return;
             const amount = parseInt(document.getElementById('wd-amount').value);
@@ -319,7 +312,6 @@
             if(!amount || !rek || !name) return showToast("Data kurang lengkap", "⚠️");
             if(amount > currentUser.balance) return showToast("Saldo tidak cukup", "💸");
 
-            // Kirim Notif Withdraw
             const res = await fetch('/api/send-notif', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ 
@@ -329,8 +321,6 @@
             });
 
             if(res.ok) {
-                // Potong Saldo Lokal (Visual) - Saldo DB belum dipotong sampai admin confirm (opsional)
-                // Atau bisa langsung potong di DB via API khusus (next step)
                 showToast("Request terkirim!", "✅");
                 closeModal('withdraw-modal');
             }
@@ -339,24 +329,32 @@
         async function submitForgot() {
             const email = document.getElementById('forgot-email').value;
             if(!email) return showToast("Isi email!", "⚠️");
+            
             await fetch('/api/send-notif', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ type: 'FORGOT_PIN', data: { email } })
             });
-            alert("Cek email Anda untuk PIN baru.");
+            
+            showToast("Cek email untuk PIN baru", "✅");
             closeModal('forgot-modal');
         }
 
-        // Utils
         function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Disalin!", "📋"); }
         function shareWa() { const url = document.getElementById("resultUrl").value; window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Tagihan:%20${url}`, '_blank'); }
         function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
         function openForgotPin() { document.getElementById('forgot-modal').classList.remove('hidden'); }
-        function openSettings() { alert("Fitur segera hadir!"); }
+        function openSettings() { showToast("Fitur segera hadir!", "🚧"); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
         
-        // Init
+        // FUNGSI TOAST KEREN (PENGGANTI ALERT)
+        function showToast(msg, icon="🔔") { 
+            const t = document.getElementById('toast'); 
+            document.getElementById('toast-msg').innerText = msg; 
+            document.getElementById('toast-icon').innerText = icon; 
+            t.classList.remove('opacity-0', 'translate-y-10'); 
+            setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); 
+        }
+        
         addItem();
     </script>
 </body>
