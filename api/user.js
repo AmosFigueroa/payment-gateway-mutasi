@@ -2,12 +2,11 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// 1. Schema User (Menyimpan Data Toko & Saldo)
 const UserSchema = new mongoose.Schema({
   store_name: String,
   email: { type: String, unique: true, required: true },
   wa: String,
-  pin: String, // Di dunia nyata ini harus di-hash (bcrypt), tapi untuk belajar plain text dulu oke
+  pin: String,
   balance: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now }
 });
@@ -22,20 +21,25 @@ export default async function handler(req, res) {
   try {
     if (mongoose.connection.readyState !== 1) await mongoose.connect(MONGODB_URI);
 
-    // --- A. REGISTER (DAFTAR BARU) ---
+    // --- PEMBERSIH EMAIL (PENTING!) ---
+    // Ubah jadi huruf kecil semua & hapus spasi di depan/belakang
+    const cleanEmail = email ? email.toLowerCase().trim() : "";
+
+    // A. REGISTER
     if (action === 'register') {
-      const existing = await User.findOne({ email });
+      const existing = await User.findOne({ email: cleanEmail });
       if (existing) return res.status(400).json({ error: 'Email sudah terdaftar!' });
 
-      const newUser = new User({ store_name: store, email, wa, pin, balance: 0 });
+      const newUser = new User({ store_name: store, email: cleanEmail, wa, pin, balance: 0 });
       await newUser.save();
 
-      return res.status(200).json({ status: 'success', message: 'User berhasil dibuat' });
+      return res.status(200).json({ status: 'success' });
     }
 
-    // --- B. LOGIN (MASUK) ---
+    // B. LOGIN
     else if (action === 'login') {
-      const user = await User.findOne({ email, pin });
+      // Cari user dengan email bersih & pin yang tepat
+      const user = await User.findOne({ email: cleanEmail, pin: pin });
       
       if (!user) return res.status(401).json({ error: 'Email atau PIN salah!' });
 
@@ -50,17 +54,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // --- C. GET BALANCE (REFRESH SALDO) ---
+    // C. CEK SALDO
     else if (action === 'check_balance') {
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email: cleanEmail });
       if (!user) return res.status(404).json({ error: 'User not found' });
       return res.status(200).json({ balance: user.balance });
     }
 
-    return res.status(400).json({ error: 'Action tidak dikenal' });
+    return res.status(400).json({ error: 'Action unknown' });
 
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ error: error.message });
   }
 }
