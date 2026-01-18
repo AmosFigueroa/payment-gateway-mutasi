@@ -4,113 +4,382 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wago Payment ID</title>
+    
     <link id="dynamic-favicon" rel="icon" type="image/png" href="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #334155; min-height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0f172a;
+            /* Background Premium Gelap */
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: cover; background-attachment: fixed;
+            color: #334155; height: 100dvh; width: 100vw; margin: 0; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
         .glass-panel { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
         .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes fadeEnter { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .receipt-cut {
+            background-image: radial-gradient(circle at 10px 0, transparent 8px, #f8fafc 9px);
+            background-size: 20px 10px;
+            background-repeat: repeat-x;
+            height: 12px; width: 100%;
+            transform: rotate(180deg);
+        }
+        .success-pop { animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards; }
+        @keyframes successPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
+
+    <div class="hidden sm:block absolute w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+
     <div id="main-container" class="w-full h-full sm:max-w-[420px] sm:h-[90vh] glass-panel sm:rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col sm:border sm:border-white/40 z-10 transition-all duration-500">
+        
         <header class="flex-none px-6 py-4 bg-white/90 border-b border-slate-100 flex items-center justify-between backdrop-blur-xl z-20 sticky top-0">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-200 overflow-hidden p-1">
                    <img id="header-logo" src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-full h-full object-contain">
                 </div>
-                <div><h1 id="header-title" class="font-bold text-base text-slate-900 leading-tight">Wago Payment</h1><p class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">SECURE CHECKOUT</p></div>
+                <div>
+                    <h1 id="header-title" class="font-bold text-base text-slate-900 leading-tight">Wago Payment</h1>
+                    <p class="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> SECURE CHECKOUT</p>
+                </div>
             </div>
+            <button onclick="confirmCancel()" class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 border border-slate-200 shadow-sm active:scale-95 transition-all">✕</button>
         </header>
 
-        <main id="app-content" class="flex-1 overflow-y-auto no-scrollbar relative bg-[#f8fafc] p-4 pb-24"></main>
+        <main id="app-content" class="flex-1 overflow-y-auto no-scrollbar relative bg-[#f8fafc] p-4 pb-24">
+            </main>
+
         <footer id="action-area" class="flex-none p-5 bg-white border-t border-slate-100 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] absolute bottom-0 w-full"></footer>
     </div>
 
-    <input type="hidden" id="customerWa"><input type="hidden" id="customerEmail">
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-all duration-300">
+        <div class="bg-white p-6 rounded-[2rem] shadow-2xl w-full max-w-xs text-center border border-white/50 transform scale-100 transition-transform duration-300">
+            <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2">Konfirmasi</h3>
+            <p id="modal-msg" class="text-sm text-slate-500 mb-6">Batalkan transaksi ini?</p>
+            <div class="grid grid-cols-2 gap-3" id="modal-actions">
+                <button onclick="closeModal()" class="py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 text-xs border border-transparent hover:border-slate-100 transition-all">Kembali</button>
+                <button id="modal-confirm-btn" class="py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg text-xs">Ya, Batal</button>
+            </div>
+             <div id="modal-alert-action" class="hidden">
+                <button onclick="closeModal()" class="w-full py-3 rounded-xl font-bold text-white bg-slate-900 hover:bg-black transition-all text-xs">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <input type="hidden" id="customerWa">
+    <input type="hidden" id="customerEmail">
 
     <script>
+        // --- KONFIGURASI DOMAIN ---
         const DOMAIN_SETTINGS = { "payment-gateway-mutasi.vercel.app": { name: "Wago Payment ID", logo: "https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" } };
-        function applyDomainSettings() { const s = DOMAIN_SETTINGS[window.location.hostname] || DOMAIN_SETTINGS["payment-gateway-mutasi.vercel.app"]; document.title = s.name; document.getElementById('header-title').innerText = s.name; document.getElementById('header-logo').src = s.logo; }
-        
+        function applyDomainSettings() { const s = DOMAIN_SETTINGS[window.location.hostname] || DOMAIN_SETTINGS["payment-gateway-mutasi.vercel.app"]; document.title = s.name; document.getElementById('header-title').innerText = s.name; document.getElementById('header-logo').src = s.logo; document.getElementById('dynamic-favicon').href = s.logo; }
+
+        // --- STATE & DATA BANK ---
+        const bankData = [
+            { id: 'bcava', name: 'Bank BCA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1200px-Bank_Central_Asia.svg.png' },
+            { id: 'bni', name: 'Bank BNI', logo: 'https://i.ibb.co.com/zh7hMw8z/36384348ef9d7bfff66da6da9e975d56-3072258775.png' },
+            { id: 'seabank', name: 'SeaBank', logo: 'https://i.ibb.co.com/wr7QqTcx/image.png' },
+            { id: 'jago', name: 'Bank Jago', logo: 'https://i.ibb.co.com/tMdwhc2v/logo-color-3719629472.png' },
+            { id: 'neobank', name: 'Neo Bank', logo: 'https://i.ibb.co.com/WWB7ZSwK/image.png' }
+        ];
+
         let state = { step: 1, totalAmount: 0, items: [], selectedMethod: 'qris', timeoutMinutes: 15, refId: "", activeQrisData: null, notifyUrl: "", merchantEmail: "" };
         const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
+        // --- INIT LOAD ---
         window.onload = function() {
             applyDomainSettings();
             const params = new URLSearchParams(window.location.search);
+            
+            // 1. TANGKAP SEMUA DATA DARI URL
             state.returnUrl = params.get('return') || document.referrer || "";
             state.notifyUrl = params.get('notify') || "";
             state.refId = params.get('ref_id') || "";
-            state.merchantEmail = params.get('merchant'); // <--- TANGKAP EMAIL MERCHANT
+            state.merchantEmail = params.get('merchant'); // <--- PENTING: EMAIL PEMILIK TOKO
             
             if(params.get('store')) document.getElementById('header-title').innerText = decodeURIComponent(params.get('store'));
-            const itemsEncoded = params.get('items');
-            if (itemsEncoded) { try { state.items = JSON.parse(atob(itemsEncoded)); state.totalAmount = state.items.reduce((sum, item) => sum + (parseInt(item.p) || 0), 0); } catch (e) {} }
-            if (state.totalAmount === 0 && params.get('price')) state.totalAmount = parseInt(params.get('price'));
             
+            // 2. PARSE ITEM & HARGA
+            const itemsEncoded = params.get('items');
+            if (itemsEncoded) {
+                try {
+                    state.items = JSON.parse(atob(itemsEncoded));
+                    state.totalAmount = state.items.reduce((sum, item) => sum + (parseInt(item.p) || 0), 0);
+                } catch (e) { fallbackSingleItem(params); }
+            } else { fallbackSingleItem(params); }
+
+            if (state.totalAmount === 0 && params.get('price')) state.totalAmount = parseInt(params.get('price'));
+
+            // 3. VALIDASI: JIKA TIDAK ADA HARGA / ITEM -> TAMPILKAN ERROR
+            if (state.totalAmount <= 0) {
+                renderInvalidLink();
+                return; // STOP DI SINI
+            }
+
+            // 4. LANJUT JIKA VALID
             document.getElementById('customerWa').value = params.get('wa') || "-";
             document.getElementById('customerEmail').value = params.get('email') || "guest@mail.com";
             renderStep1();
         };
 
+        function fallbackSingleItem(params) {
+            const prod = decodeURIComponent(params.get('prod') || "");
+            const price = parseInt(params.get('price')) || 0;
+            if (prod && price > 0) {
+                state.items = [{ n: prod, p: price }];
+                state.totalAmount = price;
+            }
+        }
+
+        // --- RENDER ERROR PAGE (JIKA LINK KOSONG) ---
+        function renderInvalidLink() {
+            const content = document.getElementById('app-content');
+            document.getElementById('action-area').style.display = 'none'; // Sembunyikan footer
+            content.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-center px-6 fade-enter">
+                    <div class="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-sm border border-slate-200">
+                        <span class="text-4xl">🔗</span>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 mb-2">Link Tidak Valid</h2>
+                    <p class="text-sm text-slate-500 mb-8 leading-relaxed">
+                        Link pembayaran ini tampaknya rusak atau kadaluwarsa. Silakan minta link baru dari penjual.
+                    </p>
+                    <a href="create-invoice.html" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-black transition-all">Masuk Dashboard Merchant</a>
+                </div>
+            `;
+        }
+
+        // --- RENDER STEP 1: PILIH METODE ---
         window.selectMethod = (id) => { state.selectedMethod = id; updateVisualSelection(); };
+        
         function updateVisualSelection() {
-            ['qris', 'bcava', 'bni', 'seabank', 'jago', 'neobank'].forEach(id => {
-                const el = document.getElementById('method-'+id); if(!el) return;
+            ['qris', ...bankData.map(b=>b.id)].forEach(id => {
+                const el = document.getElementById('method-'+id);
+                const radio = document.getElementById('radio-'+id);
+                if(!el) return;
+                
                 const active = state.selectedMethod === id;
-                el.className = `cursor-pointer relative p-3 rounded-2xl border transition-all duration-200 mb-3 flex items-center gap-4 ${active ? 'bg-slate-800 text-white ring-2 ring-slate-800' : 'bg-white hover:border-slate-300 border-slate-200'}`;
+                if(id === 'qris') {
+                    el.className = `cursor-pointer relative p-4 rounded-2xl transition-all duration-300 border ${active ? 'bg-slate-800 text-white ring-2 ring-slate-800 border-transparent shadow-xl' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'}`;
+                    if(radio) radio.className = `w-5 h-5 rounded-full border-2 ${active ? 'bg-emerald-400 border-slate-800' : 'border-slate-300'}`;
+                } else {
+                    el.className = `cursor-pointer relative p-3 rounded-2xl border transition-all duration-200 mb-3 flex items-center gap-4 ${active ? 'bg-slate-800 text-white ring-2 ring-slate-800 border-transparent shadow-xl' : 'bg-white border-slate-200 hover:border-slate-300'}`;
+                    if(radio) {
+                        radio.className = `w-5 h-5 rounded-full border-2 flex items-center justify-center ${active ? 'bg-emerald-400 border-slate-800' : 'border-slate-300 bg-white'}`;
+                        radio.innerHTML = "";
+                    }
+                }
             });
         }
 
         function renderStep1() {
             const content = document.getElementById('app-content');
-            const itemsHtml = state.items.map(i => `<div class="flex items-start gap-3 py-3 border-b border-dashed border-slate-100 last:border-0"><div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center flex-shrink-0">📦</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-700 truncate">${i.n}</p></div><span class="font-bold text-xs text-slate-800">${formatRupiah(i.p)}</span></div>`).join('');
-            
-            content.innerHTML = `
-                <div class="px-1 py-2 fade-enter">
-                    <div class="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-100 mb-6">
-                        <div class="space-y-1 mb-3 max-h-[180px] overflow-y-auto pr-1 custom-scroll">${itemsHtml}</div>
-                        <div class="mt-2 pt-4 border-t border-slate-100 flex justify-between items-center"><p class="text-[10px] font-bold text-slate-400 uppercase">Total Tagihan</p><span class="text-xl font-extrabold text-slate-900">${formatRupiah(state.totalAmount)}</span></div>
+            const itemsHtml = state.items.map(i => `
+                <div class="flex items-start gap-3 py-3 border-b border-dashed border-slate-100 last:border-0">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center flex-shrink-0 border border-indigo-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                     </div>
-                    <div id="method-qris" onclick="selectMethod('qris')" class="cursor-pointer relative p-4 rounded-2xl transition-all duration-300 bg-white text-slate-700 border border-slate-200 mb-4"><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-[10px] opacity-80">Scan via GoPay, Dana, BCA</p></div>
+                    <div class="flex-1 min-w-0 pt-0.5">
+                        <p class="text-xs font-bold text-slate-700 truncate leading-tight mb-0.5">${i.n}</p>
+                        <p class="text-[10px] text-slate-400">Qty: 1</p>
+                    </div>
+                    <span class="font-bold text-xs text-slate-800 whitespace-nowrap pt-0.5">${formatRupiah(i.p)}</span>
+                </div>
+            `).join('');
+
+            const qrisLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
+
+            content.innerHTML = `
+                <div class="px-4 py-4 fade-enter">
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3 px-1"><h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detail Pesanan</h2></div>
+                        <div class="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-100">
+                             <div class="space-y-1 mb-3 max-h-[180px] overflow-y-auto pr-1 custom-scroll">${itemsHtml}</div>
+                            <div class="mt-2 pt-4 border-t border-slate-100 flex justify-between items-center">
+                                <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Tagihan</p></div>
+                                <span class="text-xl font-extrabold text-slate-900 tracking-tight">${formatRupiah(state.totalAmount)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Metode Pembayaran</h2>
+                        <div id="method-qris" onclick="selectMethod('qris')" class="cursor-pointer relative p-4 rounded-2xl transition-all duration-300 bg-white text-slate-700 border border-slate-200 hover:border-slate-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-white p-1 border border-white/20"><img src="${qrisLogoUrl}" class="w-full h-full object-contain"></div>
+                                <div class="flex-1"><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-[10px] opacity-80 mt-0.5">Scan via GoPay, OVO, Dana, BCA</p></div>
+                                <div id="radio-qris" class="w-5 h-5 rounded-full border-2 border-slate-300"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Transfer Bank</h2>
+                            ${bankData.map(bank => `
+                                <div id="method-${bank.id}" onclick="selectMethod('${bank.id}')" class="cursor-pointer relative p-3 rounded-2xl border transition-all duration-200 mb-3 flex items-center gap-4 border-slate-200 bg-white hover:border-slate-300">
+                                    <div class="w-9 h-9 bg-white rounded-lg border border-slate-100 p-1 flex items-center justify-center"><img src="${bank.logo}" class="w-full h-full object-contain"></div>
+                                    <div class="flex-1"><h4 class="font-bold text-sm text-inherit">${bank.name}</h4><p class="text-[10px] opacity-70">Cek Otomatis</p></div>
+                                    <div id="radio-${bank.id}" class="w-5 h-5 rounded-full border-2 flex items-center justify-center border-slate-300 bg-white"></div>
+                                </div>`).join('')}
+                        </div>
+                    </div>
                 </div>`;
-            document.getElementById('action-area').innerHTML = `<button onclick="processCheckout()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl transition-all">BAYAR SEKARANG</button>`;
-            setTimeout(updateVisualSelection, 100);
+            
+            document.getElementById('action-area').innerHTML = `<button onclick="processCheckout()" class="w-full relative overflow-hidden bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] group ring-1 ring-slate-900"><span class="relative flex items-center justify-center gap-2 text-sm uppercase tracking-wide">Bayar Sekarang <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></span></button>`;
+            
+            setTimeout(() => { updateVisualSelection(); }, 100);
         }
 
         async function processCheckout() {
-            const btn = document.querySelector('#action-area button'); btn.innerHTML = "LOADING..."; btn.disabled = true;
+            const btn = document.querySelector('#action-area button');
+            if(state.selectedMethod !== 'qris' && !bankData.find(b=>b.id===state.selectedMethod)) { showAlert("Pilih Metode", "Silakan pilih Bank atau QRIS tujuan."); return; }
+            
+            btn.innerHTML = `<span class="flex items-center gap-2 justify-center">LOADING...</span>`; btn.disabled = true;
             try {
+                const productSummary = state.items.length > 1 ? `${state.items[0].n} & ${state.items.length - 1} item lainnya` : state.items[0].n;
                 const data = { 
-                    product_name: state.items.length > 1 ? `${state.items[0].n} & ${state.items.length - 1} lainnya` : state.items[0].n, 
-                    price: state.totalAmount, 
+                    product_name: productSummary, price: state.totalAmount, 
                     customer_contact: document.getElementById('customerWa').value, 
                     customer_email: document.getElementById('customerEmail').value, 
                     method: state.selectedMethod, ref_id: state.refId, notify_url: state.notifyUrl,
-                    merchant_email: state.merchantEmail, // <--- KIRIM EMAIL MERCHANT KE BACKEND
+                    merchant_email: state.merchantEmail, // WAJIB ADA UTK SALDO
                     store_name: document.getElementById('header-title').innerText 
                 };
                 const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                 const d = await res.json();
-                if(d.status === 'success') { state.totalAmount = d.total_pay; if(d.qris_meta) state.activeQrisData = { image: d.qr_image, name: d.qris_meta.name, nmid: d.qris_meta.nmid }; renderStep2(d); } 
-                else { alert(d.error); btn.innerHTML = "COBA LAGI"; btn.disabled = false; }
-            } catch(e) { alert("Error koneksi"); btn.innerHTML = "COBA LAGI"; btn.disabled = false; }
+                
+                if(d.status === 'success') { 
+                    state.totalAmount = d.total_pay; 
+                    if(d.qris_meta) { state.activeQrisData = { image: d.qr_image, name: d.qris_meta.name, nmid: d.qris_meta.nmid }; }
+                    renderStep2(d); 
+                } else { showAlert("Gagal", d.error || "Gagal memproses pesanan."); btn.innerHTML = "COBA LAGI"; btn.disabled = false; }
+            } catch(e) { showAlert("Koneksi Error", "Cek koneksi internet Anda."); btn.innerHTML = "COBA LAGI"; btn.disabled = false; }
         }
 
         function renderStep2(apiData) {
+            state.step = 2;
             const content = document.getElementById('app-content');
-            content.innerHTML = `<div class="px-4 py-4 text-center fade-enter flex flex-col items-center"><div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold mb-6 border border-red-100 animate-pulse">⏳ SISA WAKTU <span id="timer">--:--</span></div><img src="${apiData.qr_image}" class="w-64 h-64 border-2 border-slate-900 rounded-lg p-1 bg-white shadow-sm mb-4"><h2 class="text-3xl font-extrabold text-slate-800">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><p class="text-xs text-slate-500 mt-2">Transfer tepat hingga 3 digit terakhir</p></div>`;
-            document.getElementById('action-area').innerHTML = `<button onclick="location.reload()" class="w-full bg-white text-slate-400 font-bold py-4 rounded-2xl border border-slate-200">BATALKAN</button>`;
+            
+            let paymentDisplay = "";
+            if (apiData.payment_details && apiData.payment_details.type === 'bank') {
+                const bankInfo = bankData.find(b => b.id === apiData.payment_details.bank_code) || { logo: '', name: 'Bank Transfer' };
+                paymentDisplay = `<div class="bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-left relative overflow-hidden mb-4"><div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50"><div class="w-8 h-8 rounded-lg border border-slate-100 p-1 flex items-center justify-center"><img src="${bankInfo.logo}" class="w-full h-full object-contain"></div><span class="font-bold text-slate-700 text-sm">${bankInfo.name}</span></div><div onclick="copyToClipboard('${apiData.payment_details.acc_no}', 'No. Rekening Disalin!')" class="group bg-slate-50 hover:bg-slate-100 p-4 rounded-2xl border border-slate-200 flex justify-between items-center cursor-pointer transition-colors mb-2 relative"><div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">No. Rekening</p><p class="text-lg font-mono font-bold text-slate-800 tracking-widest">${apiData.payment_details.acc_no}</p></div><div class="text-slate-400 group-hover:text-blue-500 bg-white p-2 rounded-xl shadow-sm border border-slate-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div></div><p class="text-xs text-slate-500 font-medium pl-1">a.n <span class="font-bold text-slate-700">${apiData.payment_details.acc_name}</span></p></div><div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="group bg-white p-5 rounded-[2rem] shadow-xl border border-slate-100 text-center cursor-pointer hover:border-blue-200 transition-all relative"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Pembayaran</p><div class="flex items-center justify-center gap-2 mb-2"><h2 class="text-3xl font-extrabold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div><div class="inline-block bg-amber-50 text-amber-600 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-100">⚠️ TRANSFER TEPAT SAMPAI 3 DIGIT TERAKHIR</div></div>`;
+            } else {
+                paymentDisplay = `<div class="bg-white rounded-xl shadow-lg border border-slate-200 mb-4 w-full max-w-[280px] overflow-hidden transform transition-all hover:scale-[1.02]"><div class="bg-[#bf1e2e] p-3 flex items-center justify-between relative overflow-hidden"><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-5 brightness-0 invert relative z-10"><span class="text-white font-bold text-[10px] tracking-wider relative z-10">National Standard</span></div><div class="p-5 flex flex-col items-center text-center qris-pattern bg-white"><h3 class="font-bold text-slate-900 text-base uppercase leading-tight mb-1 tracking-tight">${apiData.qris_meta?.name || "Merchant"}</h3><p class="text-[10px] text-slate-500 mb-4 font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">NMID: ${apiData.qris_meta?.nmid || "-"}</p><img src="${apiData.qr_image}" class="w-full aspect-square object-contain border-2 border-slate-900 rounded-lg p-1 bg-white shadow-sm"><p class="text-[9px] text-slate-400 mt-3 font-medium">Dicetak oleh: GoPay</p></div></div><button onclick="downloadQris()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-600 font-bold py-2.5 px-4 rounded-xl border border-slate-200 text-xs shadow-sm mb-6 transition-all active:scale-95"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> SIMPAN GAMBAR QRIS</button><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">TOTAL TAGIHAN</p><div onclick="copyToClipboard('${apiData.total_pay}', 'Nominal Disalin!')" class="cursor-pointer group flex items-center gap-2"><h2 class="text-3xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-600 transition-colors">Rp ${apiData.total_pay.toLocaleString('id-ID')}</h2><svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>`;
+            }
+
+            content.innerHTML = `<div class="px-4 py-4 text-center fade-enter flex flex-col items-center"><div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold mb-6 border border-red-100 animate-pulse"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1">--:--</span></div>${paymentDisplay}<div class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-400 mt-6">ORDER ID: ${apiData.order_id}</div></div>`;
+            document.getElementById('action-area').innerHTML = `<button onclick="confirmCancel()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
             startTimer(state.timeoutMinutes * 60); startCheckingStatus(apiData.order_id);
         }
 
-        function startTimer(d) { let t=d; setInterval(() => { let m=parseInt(t/60,10), s=parseInt(t%60,10); document.getElementById('timer').innerText = `${m}:${s<10?'0'+s:s}`; if(--t<0) location.reload(); }, 1000); }
-        function startCheckingStatus(id) { setInterval(async () => { try { const r = await fetch('/api/status?order_id='+id); const d = await r.json(); if(d.status === 'PAID') renderSuccess(); } catch(e){} }, 3000); }
-        function renderSuccess() { document.getElementById('app-content').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center"><div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-3xl mb-4">✅</div><h2 class="text-2xl font-bold">LUNAS!</h2><p class="text-sm text-slate-500">Terima kasih.</p></div>`; document.getElementById('action-area').classList.add('hidden'); setTimeout(() => window.location.href=state.returnUrl, 3000); }
+        // --- UTILS & HELPERS ---
+        async function downloadQris() {
+            if (!state.activeQrisData) return;
+            const { image, name, nmid } = state.activeQrisData;
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            canvas.width = 400; canvas.height = 650;
+            const qrisLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
+            const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; logoImg.src = qrisLogoUrl;
+            logoImg.onload = () => {
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#bf1e2e'; ctx.fillRect(0, 0, canvas.width, 80);
+                ctx.filter = 'brightness(0) invert(1)'; ctx.drawImage(logoImg, 25, 25, 90, 30);
+                ctx.filter = 'none'; ctx.fillStyle = '#ffffff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'right'; ctx.fillText('National Standard', canvas.width - 25, 48);
+                ctx.fillStyle = '#1e293b'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(name.toUpperCase(), canvas.width / 2, 130);
+                ctx.fillStyle = '#64748b'; ctx.font = '14px monospace'; ctx.fillText(`NMID: ${nmid}`, canvas.width / 2, 160);
+                const qrImg = new Image(); qrImg.src = image;
+                qrImg.onload = () => {
+                    const qrSize = 300; ctx.drawImage(qrImg, (canvas.width - qrSize) / 2, 190, qrSize, qrSize);
+                    ctx.fillStyle = '#1e293b'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(`Total: ${formatRupiah(state.totalAmount)}`, canvas.width / 2, 530);
+                    ctx.fillStyle = '#94a3b8'; ctx.font = '12px sans-serif'; ctx.fillText('Dicetak oleh: GoPay', canvas.width / 2, 570);
+                    const link = document.createElement('a'); link.download = `QRIS_${name.replace(/\s+/g, '_')}.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                    showToast("Gambar QRIS berhasil disimpan!");
+                };
+            };
+        }
+
+        function startTimer(duration) {
+            let timer = duration;
+            state.timerInterval = setInterval(() => {
+                const display = document.querySelector('#timer'); if(!display) return;
+                let m = parseInt(timer / 60, 10), s = parseInt(timer % 60, 10);
+                display.textContent = `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
+                if (--timer < 0) { clearInterval(state.timerInterval); showAlert("Waktu Habis", "Sesi pembayaran telah berakhir."); setTimeout(() => location.reload(), 2000); }
+            }, 1000);
+        }
+
+        function startCheckingStatus(id) {
+            const checker = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/status?order_id='+id);
+                    const d = await res.json();
+                    if(d.status === 'PAID') { clearInterval(checker); clearInterval(state.timerInterval); renderLoadingTransition(); }
+                } catch(e){}
+            }, 3000);
+        }
+
+        function renderLoadingTransition() {
+            const content = document.getElementById('app-content');
+            document.getElementById('action-area').innerHTML = '';
+            content.innerHTML = `<div class="h-full flex flex-col items-center justify-center fade-enter text-center"><div class="relative w-20 h-20 mb-6"><svg class="animate-spin w-full h-full text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div><h3 class="text-lg font-bold text-slate-800 mb-2">Memverifikasi...</h3><p class="text-xs text-slate-500">Mohon tunggu sebentar</p></div>`;
+            setTimeout(() => { renderStep3(); }, 2000);
+        }
+
+        function renderStep3() {
+            state.step = 3;
+            const content = document.getElementById('app-content');
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ' pukul ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+            
+            document.getElementById('action-area').classList.remove('hidden');
+            const itemsList = state.items.map(i => `<div class="flex justify-between text-xs text-slate-600 mb-2 border-b border-dashed border-slate-100 pb-2 last:border-0 last:pb-0"><span class="font-medium text-slate-700 truncate max-w-[70%]">${i.n}</span><span class="font-bold text-slate-900">Rp ${i.p.toLocaleString('id-ID')}</span></div>`).join('');
+
+            content.innerHTML = `
+                <div class="p-2 success-pop flex flex-col items-center justify-center">
+                    <div class="w-full bg-white shadow-xl shadow-emerald-100/50 rounded-[1.5rem] overflow-hidden relative border border-slate-100 mb-6">
+                        <div class="h-2 bg-emerald-500 w-full"></div>
+                        <div class="p-6 text-center border-b border-dashed border-slate-200 bg-white relative z-10">
+                            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm"><svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">PEMBAYARAN LUNAS</h2>
+                            <p class="text-xs text-slate-500 mt-1 font-medium">Terima kasih, pesanan Anda telah lunas.</p>
+                        </div>
+                        <div class="p-6 bg-[#f8fafc]">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider"><span>Tanggal</span><span class="text-slate-700 font-bold normal-case">${dateStr}</span></div>
+                                <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider"><span>ID Transaksi</span><span class="font-mono text-slate-700 font-bold normal-case text-[10px]">${state.refId || '-'}</span></div>
+                                <div class="my-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-widest">RINCIAN ITEM</p><div class="max-h-[100px] overflow-y-auto pr-1 custom-scroll">${itemsList}</div></div>
+                                <div class="flex justify-between items-center pt-2 border-t border-slate-200/50 mt-2"><span class="font-bold text-slate-500 text-xs uppercase tracking-wider">Total Paid</span><span class="text-xl font-extrabold text-emerald-600">Rp ${state.totalAmount.toLocaleString('id-ID')}</span></div>
+                            </div>
+                        </div>
+                        <div class="receipt-cut w-full absolute bottom-0 left-0 z-20"></div>
+                    </div>
+                    <div class="text-center space-y-2 mb-4"><p class="text-xs text-slate-400 font-medium">Otomatis kembali dalam <span id="redirect-timer" class="font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded text-[10px]">5</span> detik</p></div>
+                </div>`;
+            
+            document.getElementById('action-area').innerHTML = `<button onclick="window.location.href=state.returnUrl" class="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all uppercase text-xs tracking-wide active:scale-[0.98] ring-1 ring-slate-900/10">KEMBALI KE BERANDA</button>`;
+            
+            let seconds = 5;
+            const redirectInterval = setInterval(() => {
+                seconds--; const el = document.getElementById('redirect-timer'); if (el) el.innerText = seconds;
+                if (seconds <= 0) { clearInterval(redirectInterval); if(state.returnUrl) window.location.href = state.returnUrl; }
+            }, 1000);
+        }
+
+        function confirmCancel() { if(state.step === 1) { window.location.href = state.returnUrl; return; } showConfirm("Batalkan Transaksi?", "Sesi pembayaran ini akan dihentikan.", () => { document.getElementById('main-container').classList.add('fade-exit'); setTimeout(() => location.reload(), 350); }); }
+        function showConfirm(title, msg, onConfirm) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg; document.getElementById('modal-actions').classList.remove('hidden'); document.getElementById('modal-alert-action').classList.add('hidden'); document.getElementById('modal-confirm-btn').onclick = onConfirm; openModal(); }
+        function showAlert(title, msg) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg; document.getElementById('modal-actions').classList.add('hidden'); document.getElementById('modal-alert-action').classList.remove('hidden'); openModal(); }
+        function openModal() { const m = document.getElementById('custom-modal'); m.classList.remove('hidden'); }
+        function closeModal() { const m = document.getElementById('custom-modal'); m.classList.add('hidden'); }
+        function showToast(message) { const existing = document.getElementById('custom-toast'); if (existing) existing.remove(); const t = document.createElement('div'); t.id = 'custom-toast'; t.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 border border-slate-700/50'; t.innerHTML = `<div class="bg-emerald-500 rounded-full p-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg></div><span class="font-medium text-sm">${message}</span>`; document.body.appendChild(t); requestAnimationFrame(() => t.classList.remove('translate-y-[-100px]', 'opacity-0')); setTimeout(() => { t.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 3000); }
+        window.copyToClipboard = (text, msg = 'Teks disalin!') => { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => showToast(msg)); } else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast(msg); } };
     </script>
 </body>
 </html>
