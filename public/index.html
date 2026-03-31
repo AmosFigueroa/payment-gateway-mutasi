@@ -40,6 +40,7 @@
       .glass-panel {
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
       }
       .fade-enter {
         animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -109,7 +110,7 @@
 
       <main
         id="app-content"
-        class="flex-1 overflow-y-auto bg-[#f8fafc] p-4 pb-24"
+        class="flex-1 overflow-y-auto no-scrollbar bg-[#f8fafc] p-4 pb-24"
       ></main>
       <footer
         id="action-area"
@@ -135,14 +136,22 @@
         state.returnUrl = params.get("return") || "/";
         state.merchantEmail = params.get("merchant");
         state.customerEmail = params.get("email") || "guest@mail.com";
-        state.productName = decodeURIComponent(params.get("prod") || "Produk");
+
+        // Perbaikan pengambilan nama produk dari URL
+        state.productName = decodeURIComponent(
+          params.get("prod") || "Pembayaran",
+        );
         state.totalAmount = parseInt(params.get("price")) || 0;
         state.refId = params.get("ref_id") || "INV-" + Date.now();
 
         if (params.get("store"))
           document.getElementById("header-title").innerText =
             decodeURIComponent(params.get("store"));
+
         if (state.totalAmount > 0) renderStep1();
+        else
+          document.getElementById("app-content").innerHTML =
+            `<div class="text-center py-20 font-bold">Data Tidak Valid</div>`;
       };
 
       function renderStep1() {
@@ -162,7 +171,7 @@
                     <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">METODE PEMBAYARAN</h2>
                     <div class="p-5 bg-[#1e293b] text-white rounded-[1.2rem] shadow-xl border border-transparent flex items-center gap-4">
                         <img src="${qrisLogo}" class="h-6 brightness-0 invert">
-                        <div><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-[10px] text-slate-400">Support All E-Wallet & M-Banking</p></div>
+                        <div><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-[10px] text-slate-400 uppercase">SUPPORT ALL E-WALLET</p></div>
                     </div>
                 </div>`;
         document.getElementById("action-area").innerHTML =
@@ -190,7 +199,7 @@
           const d = await res.json();
           if (d.status === "success") renderStep2(d);
         } catch (e) {
-          alert("Error!");
+          alert("Error Server!");
           btn.innerText = "BAYAR SEKARANG";
           btn.disabled = false;
         }
@@ -201,11 +210,11 @@
                 <div class="px-4 py-4 text-center fade-enter flex flex-col items-center">
                     <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-xl mb-6 relative overflow-hidden">
                         <div class="bg-[#bf1e2e] h-8 -mx-5 -mt-5 mb-5 flex items-center justify-between px-4"><img src="${qrisLogo}" class="h-4 brightness-0 invert"><span class="text-white font-bold text-[8px] tracking-widest uppercase">National Standard</span></div>
-                        <h3 class="font-bold mb-3 text-slate-800 text-sm">${apiData.qris_meta?.name || "Wago Payment"}</h3>
+                        <h3 class="font-bold mb-3 text-slate-800 text-sm uppercase">${apiData.qris_meta?.name || "Wago Payment"}</h3>
                         <img src="${apiData.qr_image}" class="w-64 h-64 border-2 border-slate-900 rounded-lg p-1">
-                        <p class="text-[10px] text-slate-400 font-mono mt-3 uppercase">ORDER ID: ${apiData.order_id}</p>
+                        <p class="text-[10px] text-slate-400 font-mono mt-3 uppercase tracking-wider">ORDER ID: ${apiData.order_id}</p>
                     </div>
-                    <h2 class="text-3xl font-black text-slate-800">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
                     <p class="text-xs text-emerald-500 font-bold mt-2 animate-pulse uppercase">Menunggu Pembayaran...</p>
                 </div>`;
         document.getElementById("action-area").innerHTML =
@@ -236,7 +245,7 @@
           .replace(".", ":");
         document.getElementById("app-content").innerHTML = `
                 <div class="p-2 success-pop flex flex-col items-center justify-center">
-                    <div class="w-full bg-white shadow-2xl rounded-[1.5rem] overflow-hidden relative border border-slate-100 min-h-[350px]">
+                    <div class="w-full bg-white shadow-2xl rounded-[1.5rem] overflow-hidden relative border border-slate-100">
                         <div class="h-2 bg-emerald-500 w-full"></div>
                         <div class="p-6 text-center border-b border-dashed border-slate-200">
                             <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm"><svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
@@ -245,10 +254,10 @@
                         </div>
                         <div class="p-6 bg-[#f8fafc] text-[11px] space-y-3">
                             <div class="flex justify-between text-slate-400 font-bold uppercase"><span>Tanggal</span><span class="text-slate-700 font-bold normal-case">${dateStr}</span></div>
-                            <div class="flex justify-between text-slate-400 font-bold uppercase"><span>ID Transaksi</span><span class="font-mono text-slate-700">${state.refId}</span></div>
+                            <div class="flex justify-between text-slate-400 font-bold uppercase"><span>ID Transaksi</span><span class="font-mono text-slate-700 font-bold">${state.refId}</span></div>
                             <div class="flex justify-between text-slate-400 font-bold uppercase"><span>Item</span><span class="text-slate-700 font-bold">${state.productName}</span></div>
                             <div class="pt-4 border-t border-slate-200 flex justify-between items-center">
-                                <span class="font-bold text-slate-400 uppercase tracking-widest">Total Paid</span>
+                                <span class="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Total Paid</span>
                                 <span class="text-2xl font-black text-emerald-600">Rp ${state.totalAmount.toLocaleString("id-ID")}</span>
                             </div>
                         </div>

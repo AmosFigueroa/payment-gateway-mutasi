@@ -4,7 +4,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const GAS_EMAIL_URL = process.env.GAS_EMAIL_URL;
 const SECRET_KEY = process.env.SECRET_KEY;
 
-// 1. SCHEMA LENGKAP (Agar semua data terbaca)
+// Schema lengkap untuk akses semua data order
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   ref_id: String,
@@ -39,17 +39,14 @@ export default async function handler(req, res) {
       await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
     }
 
-    // Gabungkan pesan untuk deteksi nominal
     const fullMsg = `${title || ""} ${text || ""} ${message || ""}`;
     const pkg = package_name ? package_name.toLowerCase() : "";
 
-    // Deteksi Bank
     let source = "QRIS";
     if (pkg.includes("gopay") || pkg.includes("gobiz")) source = "GoPay";
     else if (pkg.includes("dana")) source = "DANA";
     else if (pkg.includes("bca")) source = "BCA";
 
-    // Parsing Angka Nominal
     const matches = fullMsg.match(/([\d\.]+)/g);
     let nominal = 0;
     if (matches) {
@@ -62,9 +59,6 @@ export default async function handler(req, res) {
       }
     }
 
-    console.log(`🔎 MENCARI ORDER: Rp ${nominal} dari ${source}`);
-
-    // UPDATE STATUS JADI PAID
     const updatedOrder = await Order.findOneAndUpdate(
       { total_pay: nominal, status: "UNPAID" },
       { $set: { status: "PAID" } },
@@ -72,9 +66,7 @@ export default async function handler(req, res) {
     );
 
     if (updatedOrder) {
-      console.log(`✅ LUNAS: ${updatedOrder.order_id}`);
-
-      // A. UPDATE SALDO MERCHANT (Penting!)
+      // 1. Update Saldo Merchant
       if (updatedOrder.merchant_email) {
         await User.findOneAndUpdate(
           { email: updatedOrder.merchant_email },
@@ -82,7 +74,7 @@ export default async function handler(req, res) {
         );
       }
 
-      // B. KIRIM EMAIL STRUK PREMIUM (Sesuai Apps Script Mas)
+      // 2. Kirim Email ke PEMBELI (customer_email)
       if (GAS_EMAIL_URL && updatedOrder.customer_email) {
         fetch(GAS_EMAIL_URL, {
           method: "POST",
@@ -91,10 +83,10 @@ export default async function handler(req, res) {
             type: "PAYMENT_SUCCESS",
             data: {
               store: updatedOrder.store_name || "Wago Payment",
-              email: updatedOrder.customer_email,
+              email: updatedOrder.customer_email, // Email Pembeli
               amount: updatedOrder.total_pay.toLocaleString("id-ID"),
-              product: updatedOrder.product_name || "Produk Digital",
-              ref: updatedOrder.ref_id || updatedOrder.order_id,
+              product: updatedOrder.product_name, // Nama Produk Asli (e.g. cuci sepatu)
+              ref: updatedOrder.ref_id,
               bank: source,
               date: new Date().toLocaleString("id-ID", {
                 timeZone: "Asia/Jakarta",
@@ -103,13 +95,10 @@ export default async function handler(req, res) {
           }),
         }).catch((e) => console.error("Email Error:", e));
       }
-
       return res.status(200).json({ status: "success" });
     }
 
-    return res
-      .status(200)
-      .json({ status: "ignored", reason: "Order not found" });
+    return res.status(200).json({ status: "ignored" });
   } catch (e) {
     return res.status(500).send(e.message);
   }
