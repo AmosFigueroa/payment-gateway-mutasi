@@ -74,7 +74,6 @@
         display: none;
       }
 
-      /* FIX UKURAN MODAL */
       .modal-backdrop {
         background: rgba(15, 23, 42, 0.8);
         backdrop-filter: blur(8px);
@@ -161,17 +160,18 @@
       class="w-full h-full sm:max-w-[420px] sm:h-[90vh] glass-panel sm:rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col transition-all duration-500"
     >
       <header
-        class="flex-none px-6 py-4 bg-white/90 border-b border-slate-100 flex items-center justify-between z-20 sticky top-0"
+        class="flex-none px-6 py-5 bg-white border-b border-slate-100 flex items-center justify-between z-20 sticky top-0"
       >
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
           <img
             src="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png"
-            class="w-9 h-9 object-contain"
+            class="w-12 h-12 object-contain"
+            alt="Logo"
           />
           <div>
             <h1
               id="header-title"
-              class="font-bold text-base text-slate-900 leading-tight"
+              class="font-bold text-lg text-slate-900 leading-tight"
             >
               Wagopay
             </h1>
@@ -187,7 +187,7 @@
         </div>
         <button
           onclick="openCancelModal()"
-          class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 active:scale-95 transition-all"
+          class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 active:scale-95 transition-all"
         >
           ✕
         </button>
@@ -208,12 +208,20 @@
         totalAmount: 0,
         productName: "",
         refId: "",
+        orderId: "",
         customerEmail: "",
         merchantEmail: "",
         returnUrl: "",
+        mainTimer: null,
       };
       const qrisLogo =
         "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+          alert("Order ID disalin!");
+        });
+      };
 
       window.onload = function () {
         const params = new URLSearchParams(window.location.search);
@@ -236,13 +244,13 @@
       function renderStep1() {
         document.getElementById("app-content").innerHTML = `
                 <div class="px-4 py-4 fade-enter">
-                    <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Detail Pesanan</h2>
-                    <div class="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 mb-8">
-                        <div class="mb-4 text-left">
+                    <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 text-left">Detail Pesanan</h2>
+                    <div class="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 mb-8 text-left">
+                        <div class="mb-4">
                             <p class="text-[10px] text-slate-400 font-bold uppercase">Nama Produk</p>
                             <p class="text-slate-800 font-bold text-lg">${state.productName}</p>
                         </div>
-                        <div class="pt-4 border-t border-slate-100 text-left">
+                        <div class="pt-4 border-t border-slate-100">
                             <p class="text-[10px] text-slate-400 font-bold uppercase">Total Tagihan</p>
                             <p class="text-2xl font-extrabold text-slate-800 tracking-tight">Rp ${state.totalAmount.toLocaleString("id-ID")}</p>
                         </div>
@@ -275,7 +283,10 @@
             }),
           });
           const d = await res.json();
-          if (d.status === "success") renderStep2(d);
+          if (d.status === "success") {
+            state.orderId = d.order_id;
+            renderStep2(d);
+          }
         } catch (e) {
           alert("Server Error!");
           btn.innerText = "Bayar Sekarang";
@@ -291,7 +302,7 @@
                     </div>
                     <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-xl mb-6 relative overflow-hidden w-full">
                         <div class="bg-[#bf1e2e] h-10 -mx-5 -mt-5 mb-5 flex items-center justify-between px-4">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-5 brightness-0 invert">
+                            <img src="${qrisLogo}" class="h-5 brightness-0 invert">
                             <span class="text-white font-bold text-[10px] tracking-widest uppercase">National Standard</span>
                         </div>
                         <h3 class="font-bold mb-3 text-slate-800 text-sm uppercase">${apiData.qris_name || "MERCHANT QRIS"}</h3>
@@ -308,15 +319,15 @@
                         <p class="text-[9px] text-slate-400 font-mono mt-4 uppercase">ID: ${apiData.order_id}</p>
                     </div>
                     <h2 class="text-3xl font-black text-slate-800 tracking-tight">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
-                    <p class="text-[10px] text-emerald-600 font-bold mt-1 uppercase">Wajib bayar sesuai nominal di atas</p>
+                    <p class="text-[10px] text-emerald-600 font-bold mt-1 uppercase">Termasuk kode unik (+${apiData.unique_code || 0})</p>
                 </div>`;
         document.getElementById("action-area").innerHTML =
           `<button onclick="openCancelModal()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs shadow-sm active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
         lucide.createIcons();
+        startCountdown(15 * 60);
         startCheckingStatus(apiData.order_id);
       }
 
-      // CUSTOM MODAL LOGIC
       function openCancelModal() {
         document.getElementById("cancel-modal").classList.add("active");
       }
@@ -339,12 +350,28 @@
           .then(() => alert("Nominal disalin: " + val));
       }
 
+      function startCountdown(duration) {
+        let timer = duration;
+        state.mainTimer = setInterval(() => {
+          let m = parseInt(timer / 60, 10),
+            s = parseInt(timer % 60, 10);
+          if (document.querySelector("#timer"))
+            document.querySelector("#timer").textContent =
+              (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+          if (--timer < 0) {
+            clearInterval(state.mainTimer);
+            location.reload();
+          }
+        }, 1000);
+      }
+
       function startCheckingStatus(id) {
         const checker = setInterval(async () => {
           const res = await fetch(`/api/status?order_id=${id}&t=${Date.now()}`);
           const d = await res.json();
           if (d.status === "PAID") {
             clearInterval(checker);
+            if (state.mainTimer) clearInterval(state.mainTimer);
             if (d.product_name) state.productName = d.product_name;
             renderStep3();
           }
@@ -369,12 +396,18 @@
                             <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm">
                                 <i data-lucide="check-circle" class="w-8 h-8 text-emerald-500"></i>
                             </div>
-                            <h2 class="text-xl font-black text-slate-900 tracking-tight uppercase">Pembayaran Lunas</h2>
+                            <h2 class="text-xl font-black text-slate-900 uppercase">Pembayaran Lunas</h2>
                             <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Terima kasih, pesanan Anda telah lunas</p>
                         </div>
                         <div class="p-6 bg-[#f8fafc] text-[11px] space-y-3 font-bold text-left">
                             <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>Tanggal</span><span class="text-slate-700 font-bold normal-case">${dateStr}</span></div>
-                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>ID Transaksi</span><span class="font-mono text-slate-700">${state.refId}</span></div>
+                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>ID Transaksi</span><span class="font-mono text-slate-700 uppercase">${state.refId}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold uppercase tracking-wider">Order ID</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="font-bold font-mono text-slate-700 text-[10px]">${state.orderId}</span>
+                                    <button onclick="copyToClipboard('${state.orderId}')" class="bg-slate-200 p-1 rounded hover:bg-slate-300 transition-all text-[9px] font-bold">SALIN</button>
+                                </div>
+                            </div>
                             <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>Item</span><span class="text-slate-700 uppercase">${state.productName}</span></div>
                             <div class="pt-4 border-t border-slate-200 flex justify-between items-center">
                                 <span class="text-slate-400 uppercase tracking-widest text-[9px]">Total Paid</span>
@@ -382,18 +415,18 @@
                             </div>
                         </div><div class="receipt-cut"></div>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-bold">Otomatis kembali dalam <span id="redirect-timer" class="text-slate-900">5</span> detik</p>
+                    <p class="text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-bold">Kembali dalam <span id="redirect-timer" class="text-slate-900">10</span> detik</p>
                 </div>`;
         document.getElementById("action-area").innerHTML =
           `<button onclick="window.location.href='${state.returnUrl}'" class="w-full py-4 bg-[#0f172a] text-white font-bold rounded-2xl shadow-xl">KEMBALI KE TOKO</button>`;
         lucide.createIcons();
-        let s = 5;
-        const redirect = setInterval(() => {
+        let s = 10;
+        const redirectTimer = setInterval(() => {
           s--;
           if (document.getElementById("redirect-timer"))
             document.getElementById("redirect-timer").innerText = s;
           if (s <= 0) {
-            clearInterval(redirect);
+            clearInterval(redirectTimer);
             window.location.href = state.returnUrl;
           }
         }, 1000);
