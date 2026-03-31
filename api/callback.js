@@ -4,7 +4,6 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const GAS_EMAIL_URL = process.env.GAS_EMAIL_URL;
 const SECRET_KEY = process.env.SECRET_KEY;
 
-// Schema lengkap untuk akses semua data order
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   ref_id: String,
@@ -29,19 +28,15 @@ const User =
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
-
   const { secret, message, title, text, package_name } = req.body;
   if (SECRET_KEY && secret !== SECRET_KEY)
     return res.status(401).send("Unauthorized");
 
   try {
-    if (mongoose.connection.readyState !== 1) {
+    if (mongoose.connection.readyState !== 1)
       await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-    }
-
     const fullMsg = `${title || ""} ${text || ""} ${message || ""}`;
     const pkg = package_name ? package_name.toLowerCase() : "";
-
     let source = "QRIS";
     if (pkg.includes("gopay") || pkg.includes("gobiz")) source = "GoPay";
     else if (pkg.includes("dana")) source = "DANA";
@@ -66,15 +61,12 @@ export default async function handler(req, res) {
     );
 
     if (updatedOrder) {
-      // 1. Update Saldo Merchant
-      if (updatedOrder.merchant_email) {
+      if (updatedOrder.merchant_email)
         await User.findOneAndUpdate(
           { email: updatedOrder.merchant_email },
           { $inc: { balance: updatedOrder.total_pay } },
         );
-      }
 
-      // 2. Kirim Email ke PEMBELI (customer_email)
       if (GAS_EMAIL_URL && updatedOrder.customer_email) {
         fetch(GAS_EMAIL_URL, {
           method: "POST",
@@ -83,9 +75,9 @@ export default async function handler(req, res) {
             type: "PAYMENT_SUCCESS",
             data: {
               store: updatedOrder.store_name || "Wago Payment",
-              email: updatedOrder.customer_email, // Email Pembeli
+              email: updatedOrder.customer_email, // TUJUAN EMAIL KE PEMBELI
               amount: updatedOrder.total_pay.toLocaleString("id-ID"),
-              product: updatedOrder.product_name, // Nama Produk Asli (e.g. cuci sepatu)
+              product: updatedOrder.product_name, // NAMA ITEM ASLI (e.g. cuci sepatu)
               ref: updatedOrder.ref_id,
               bank: source,
               date: new Date().toLocaleString("id-ID", {
@@ -97,7 +89,6 @@ export default async function handler(req, res) {
       }
       return res.status(200).json({ status: "success" });
     }
-
     return res.status(200).json({ status: "ignored" });
   } catch (e) {
     return res.status(500).send(e.message);
