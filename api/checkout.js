@@ -6,9 +6,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   ref_id: String,
-  notify_url: String,
   product_name: String,
-  customer_contact: String,
   customer_email: String,
   merchant_email: String,
   store_name: String,
@@ -17,7 +15,6 @@ const OrderSchema = new mongoose.Schema({
   qris_string: String,
   created_at: { type: Date, default: Date.now },
 });
-
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
 function crc16(str) {
@@ -44,15 +41,11 @@ function convertToDynamic(qrisRaw, amount) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
-
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
   try {
     if (mongoose.connection.readyState !== 1)
       await mongoose.connect(MONGODB_URI);
-
     const {
       product_name,
       price,
@@ -62,14 +55,12 @@ export default async function handler(req, res) {
       ref_id,
     } = req.body;
 
-    // VALIDASI: Pastikan product_name tidak kosong atau "1 Items"
-    const finalProductName =
+    // VALIDASI: Hindari Nama Item Rusak
+    const finalProdName =
       product_name && product_name !== "1 Items"
         ? product_name
-        : "Pembayaran Digital";
-
-    const uniqueCode = Math.floor(Math.random() * 99) + 1;
-    const totalPay = parseInt(price) + uniqueCode;
+        : "Produk Digital";
+    const totalPay = parseInt(price) + (Math.floor(Math.random() * 99) + 1);
     const orderId = "ORD-" + Date.now();
 
     const qrisRaw =
@@ -80,7 +71,7 @@ export default async function handler(req, res) {
     await Order.create({
       order_id: orderId,
       ref_id: ref_id || "-",
-      product_name: finalProductName, // MENYIMPAN NAMA ASLI KE DB
+      product_name: finalProdName,
       customer_email: customer_email,
       merchant_email: merchant_email,
       store_name: store_name || "Wagopay",

@@ -1,267 +1,815 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Merchant Dashboard - Wago Payment</title>
-    <link rel="icon" type="image/png" href="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png">
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #334155; min-height: 100vh; }
-        .modern-card { background: #ffffff; border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
-        .input-field { width: 100%; padding: 12px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; font-size: 0.875rem; transition: all 0.2s; color: #334155; font-weight: 600; }
-        .input-field:focus { outline: none; border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
-        .input-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: block; }
-        .btn-main { background: #0f172a; color: white; padding: 12px 24px; border-radius: 1rem; font-weight: 700; transition: all 0.2s; cursor: pointer; }
-        .btn-main:hover { background: #1e293b; transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.3); }
-        .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
-        .btn-sec { background: transparent; color: #64748b; padding: 12px 24px; border-radius: 1rem; font-weight: 700; transition: all 0.2s; border: 2px solid #e2e8f0; }
-        .btn-sec:hover { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .modal-box { animation: scaleIn 0.2s ease-out forwards; }
-        .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes fadeEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: #0f172a;
+        color: #334155;
+        min-height: 100vh;
+      }
+      .modern-card {
+        background: #ffffff;
+        border-radius: 2.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      }
+      .input-field {
+        width: 100%;
+        padding: 12px 16px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        color: #334155;
+        font-weight: 600;
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #6366f1;
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      }
+      .input-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+      .btn-main {
+        background: #0f172a;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 1rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+      .btn-main:hover {
+        background: #1e293b;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.3);
+      }
+      .btn-main:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+      .btn-sec {
+        background: transparent;
+        color: #64748b;
+        padding: 12px 24px;
+        border-radius: 1rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        border: 2px solid #e2e8f0;
+      }
+      .btn-sec:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      @keyframes scaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .modal-box {
+        animation: scaleIn 0.2s ease-out forwards;
+      }
+      .fade-enter {
+        animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+      @keyframes fadeEnter {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
-</head>
-<body class="flex items-center justify-center p-4 sm:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
-
-    <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="modern-card p-8 sm:p-10 w-full max-w-[400px] text-center relative modal-box">
-            <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm border border-slate-100"><img src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png" class="w-12 h-12 object-contain"></div>
-            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Merchant Login</h2>
-            <div class="space-y-4 text-left">
-                <div><label class="input-label">Email</label><input type="email" id="login-email" class="input-field" placeholder="email@toko.com"></div>
-                <div><label class="input-label">PIN Keamanan</label><input type="password" id="login-pin" class="input-field text-center tracking-[0.5em] font-extrabold" placeholder="••••••" maxlength="6"></div>
-            </div>
-            <button onclick="doLogin()" class="btn-main w-full text-lg py-4 mt-8 mb-6">MASUK DASHBOARD</button>
-            <div class="flex justify-between items-center text-sm font-bold px-2">
-                <button onclick="openForgotPin()" class="text-slate-400 hover:text-slate-600">Lupa PIN?</button>
-                <button onclick="toggleRegister(true)" class="text-indigo-600 hover:text-indigo-800">Daftar Mitra Baru</button>
-            </div>
+  </head>
+  <body
+    class="flex items-center justify-center p-4 sm:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black"
+  >
+    <div
+      id="login-overlay"
+      class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+    >
+      <div
+        class="modern-card p-8 sm:p-10 w-full max-w-[400px] text-center relative modal-box"
+      >
+        <div
+          class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm border border-slate-100"
+        >
+          <img
+            src="https://i.ibb.co.com/vCmXfR9s/logo-wagopay-1-2.png"
+            class="w-12 h-12 object-contain"
+          />
         </div>
+        <h2 class="text-2xl font-extrabold text-slate-900 mb-2">
+          Merchant Login
+        </h2>
+        <div class="space-y-4 text-left">
+          <div>
+            <label class="input-label">Email</label
+            ><input
+              type="email"
+              id="login-email"
+              class="input-field"
+              placeholder="email@toko.com"
+            />
+          </div>
+          <div>
+            <label class="input-label">PIN Keamanan</label
+            ><input
+              type="password"
+              id="login-pin"
+              class="input-field text-center tracking-[0.5em] font-extrabold"
+              placeholder="••••••"
+              maxlength="6"
+            />
+          </div>
+        </div>
+        <button
+          onclick="doLogin()"
+          class="btn-main w-full text-lg py-4 mt-8 mb-6"
+        >
+          MASUK DASHBOARD
+        </button>
+        <div class="flex justify-between items-center text-sm font-bold px-2">
+          <button
+            onclick="openForgotPin()"
+            class="text-slate-400 hover:text-slate-600"
+          >
+            Lupa PIN?
+          </button>
+          <button
+            onclick="toggleRegister(true)"
+            class="text-indigo-600 hover:text-indigo-800"
+          >
+            Daftar Mitra Baru
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div id="register-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="modern-card p-8 w-full max-w-[400px] relative modal-box">
-            <button onclick="toggleRegister(false)" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full">✕</button>
-            <h3 class="text-2xl font-extrabold text-slate-900 text-center mb-6">Daftar Mitra</h3>
-            <div class="space-y-4">
-                <div><label class="input-label">Nama Toko</label><input type="text" id="reg-store" class="input-field" placeholder="Contoh: Kopi Senja"></div>
-                <div><label class="input-label">Email Aktif</label><input type="email" id="reg-email" class="input-field" placeholder="email@toko.com"></div>
-                <div><label class="input-label">WhatsApp</label><input type="text" id="reg-wa" class="input-field" placeholder="0812xxx"></div>
-                <div><label class="input-label">Buat PIN (6 Angka)</label><input type="password" id="reg-pin" class="input-field text-center tracking-widest" placeholder="••••••" maxlength="6"></div>
-            </div>
-            <button onclick="doRegister()" class="btn-main w-full py-4 mt-8 bg-emerald-600 hover:bg-emerald-700">DAFTAR SEKARANG</button>
+    <div
+      id="register-overlay"
+      class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+    >
+      <div class="modern-card p-8 w-full max-w-[400px] relative modal-box">
+        <button
+          onclick="toggleRegister(false)"
+          class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"
+        >
+          ✕
+        </button>
+        <h3 class="text-2xl font-extrabold text-slate-900 text-center mb-6">
+          Daftar Mitra
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label class="input-label">Nama Toko</label
+            ><input
+              type="text"
+              id="reg-store"
+              class="input-field"
+              placeholder="Contoh: Kopi Senja"
+            />
+          </div>
+          <div>
+            <label class="input-label">Email Aktif</label
+            ><input
+              type="email"
+              id="reg-email"
+              class="input-field"
+              placeholder="email@toko.com"
+            />
+          </div>
+          <div>
+            <label class="input-label">WhatsApp</label
+            ><input
+              type="text"
+              id="reg-wa"
+              class="input-field"
+              placeholder="0812xxx"
+            />
+          </div>
+          <div>
+            <label class="input-label">Buat PIN (6 Angka)</label
+            ><input
+              type="password"
+              id="reg-pin"
+              class="input-field text-center tracking-widest"
+              placeholder="••••••"
+              maxlength="6"
+            />
+          </div>
         </div>
+        <button
+          onclick="doRegister()"
+          class="btn-main w-full py-4 mt-8 bg-emerald-600 hover:bg-emerald-700"
+        >
+          DAFTAR SEKARANG
+        </button>
+      </div>
     </div>
 
     <div id="main-dashboard" class="w-full max-w-6xl hidden fade-enter">
-        <nav class="flex justify-between items-center mb-8 bg-white/10 backdrop-blur-xl p-4 pl-6 rounded-3xl border border-white/20 text-white shadow-2xl">
-            <div class="flex items-center gap-4"><img src="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png" class="w-10 h-10 bg-white rounded-xl p-1"><span class="font-extrabold text-xl tracking-tight hidden sm:block">MERCHANT PANEL</span></div>
-            <div class="flex items-center gap-4">
-                <div class="text-right mr-2 hidden sm:block bg-white/10 px-4 py-2 rounded-xl border border-white/10">
-                    <p class="text-[10px] text-indigo-200 uppercase font-bold mb-0.5">Pemilik Toko</p>
-                    <p class="text-white font-bold text-sm leading-tight" id="nav-store-name">Loading...</p>
-                </div>
-                <button onclick="refreshBalance()" class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-2xl transition-all border border-white/10" title="Refresh Saldo">🔄</button>
-                <button onclick="logout()" class="bg-red-500/80 hover:bg-red-600 text-white px-4 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-red-500/20">LOGOUT</button>
-            </div>
-        </nav>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-7 space-y-8">
-                <div class="modern-card p-8">
-                    <div class="flex justify-between items-center mb-8"><div><h3 class="text-2xl font-extrabold text-slate-900">Buat Invoice</h3><p class="text-slate-500 text-sm font-medium">Link pembayaran otomatis</p></div><span class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full font-extrabold border border-indigo-100">Max 10 Items</span></div>
-                    
-                    <div class="bg-slate-50 rounded-3xl p-6 mb-6 border border-slate-200/60">
-                        <div class="flex justify-between mb-4 items-center"><label class="input-label mb-0">Rincian Produk & Harga</label><span id="item-count" class="text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200">0/10</span></div>
-                        <div id="items-wrapper" class="space-y-3 mb-4 min-h-[50px]"></div>
-                        <button onclick="addItem()" class="w-full py-3 bg-white border-2 border-dashed border-indigo-200 text-indigo-500 rounded-2xl text-sm font-bold hover:bg-indigo-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98]">Tambah Baris Barang</button>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-end">
-                        <div class="bg-slate-900 rounded-3xl p-5 text-white relative overflow-hidden shadow-xl"><div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] opacity-20"></div><label class="text-[10px] font-bold text-indigo-200 uppercase tracking-wider mb-1 block relative">Total Tagihan</label><div class="text-3xl font-extrabold tracking-tight relative" id="total-display">Rp 0</div></div>
-                        <div class="space-y-4"><div><label class="input-label">WhatsApp Pelanggan</label><input type="text" id="custWa" class="input-field" placeholder="0812xxx"></div><div><label class="input-label">Email Pelanggan</label><input type="email" id="custEmail" class="input-field" placeholder="email@pembeli.com"></div></div>
-                    </div>
-                    
-                    <button onclick="createInvoice()" class="btn-main w-full py-4 text-lg shadow-xl shadow-slate-900/20">✨ BUAT LINK PEMBAYARAN</button>
-                    
-                    <div id="result-area" class="hidden mt-8 pt-8 border-t-2 border-dashed border-slate-100">
-                        <label class="input-label text-emerald-600">Link Berhasil Dibuat!</label>
-                        <div class="relative mb-4"><textarea id="resultUrl" class="input-field h-24 font-mono text-xs text-slate-600 bg-slate-50/50 resize-none" readonly></textarea></div>
-                        <div class="grid grid-cols-2 gap-4"><button onclick="copyLink()" class="btn-sec flex items-center justify-center gap-2">Copy Link</button><button onclick="shareWa()" class="btn-main bg-emerald-500 hover:bg-emerald-600">Kirim WA</button></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-5 space-y-8">
-                <div class="modern-card p-8 bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-800 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20">
-                    <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-400 rounded-full blur-[80px] opacity-30 pointer-events-none"></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-start mb-8">
-                            <div><p class="text-sm text-indigo-200 font-bold uppercase tracking-widest mb-2">Saldo Dompet</p><h2 class="text-[2.5rem] font-extrabold leading-none" id="wallet-balance">Rp 0</h2></div>
-                            <button onclick="openWithdraw()" class="bg-white text-slate-900 px-5 py-3 rounded-2xl text-sm font-extrabold shadow-lg hover:scale-105 transition-all flex items-center gap-2">💸 CAIRKAN</button>
-                        </div>
-                        <div class="bg-black/20 rounded-2xl p-5 backdrop-blur-md border border-white/10 mb-6"><div class="flex justify-between text-xs mb-3 font-medium"><span class="text-indigo-200">User</span><span class="font-bold text-white" id="wallet-user">-</span></div><div class="w-full bg-black/30 rounded-full h-2.5 mb-2 relative overflow-hidden"><div class="bg-emerald-400 h-2.5 rounded-full relative" style="width: 100%"></div></div></div>
-                    </div>
-                </div>
-            </div>
+      <nav
+        class="flex justify-between items-center mb-8 bg-white/10 backdrop-blur-xl p-4 pl-6 rounded-3xl border border-white/20 text-white shadow-2xl"
+      >
+        <div class="flex items-center gap-4">
+          <img
+            src="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png"
+            class="w-10 h-10 bg-white rounded-xl p-1"
+          /><span class="font-extrabold text-xl tracking-tight hidden sm:block"
+            >MERCHANT PANEL</span
+          >
         </div>
+        <div class="flex items-center gap-4">
+          <div
+            class="text-right mr-2 hidden sm:block bg-white/10 px-4 py-2 rounded-xl border border-white/10"
+          >
+            <p class="text-[10px] text-indigo-200 uppercase font-bold mb-0.5">
+              Pemilik Toko
+            </p>
+            <p
+              class="text-white font-bold text-sm leading-tight"
+              id="nav-store-name"
+            >
+              Loading...
+            </p>
+          </div>
+          <button
+            onclick="refreshBalance()"
+            class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-2xl transition-all border border-white/10"
+            title="Refresh Saldo"
+          >
+            🔄
+          </button>
+          <button
+            onclick="logout()"
+            class="bg-red-500/80 hover:bg-red-600 text-white px-4 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-red-500/20"
+          >
+            LOGOUT
+          </button>
+        </div>
+      </nav>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-7 space-y-8">
+          <div class="modern-card p-8">
+            <div class="flex justify-between items-center mb-8">
+              <div>
+                <h3 class="text-2xl font-extrabold text-slate-900">
+                  Buat Invoice
+                </h3>
+                <p class="text-slate-500 text-sm font-medium">
+                  Link pembayaran otomatis
+                </p>
+              </div>
+              <span
+                class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full font-extrabold border border-indigo-100"
+                >Max 10 Items</span
+              >
+            </div>
+
+            <div
+              class="bg-slate-50 rounded-3xl p-6 mb-6 border border-slate-200/60"
+            >
+              <div class="flex justify-between mb-4 items-center">
+                <label class="input-label mb-0">Rincian Produk & Harga</label
+                ><span
+                  id="item-count"
+                  class="text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200"
+                  >0/10</span
+                >
+              </div>
+              <div id="items-wrapper" class="space-y-3 mb-4 min-h-[50px]"></div>
+              <button
+                onclick="addItem()"
+                class="w-full py-3 bg-white border-2 border-dashed border-indigo-200 text-indigo-500 rounded-2xl text-sm font-bold hover:bg-indigo-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98]"
+              >
+                Tambah Baris Barang
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-end">
+              <div
+                class="bg-slate-900 rounded-3xl p-5 text-white relative overflow-hidden shadow-xl"
+              >
+                <div
+                  class="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] opacity-20"
+                ></div>
+                <label
+                  class="text-[10px] font-bold text-indigo-200 uppercase tracking-wider mb-1 block relative"
+                  >Total Tagihan</label
+                >
+                <div
+                  class="text-3xl font-extrabold tracking-tight relative"
+                  id="total-display"
+                >
+                  Rp 0
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="input-label">WhatsApp Pelanggan</label
+                  ><input
+                    type="text"
+                    id="custWa"
+                    class="input-field"
+                    placeholder="0812xxx"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">Email Pelanggan</label
+                  ><input
+                    type="email"
+                    id="custEmail"
+                    class="input-field"
+                    placeholder="email@pembeli.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              onclick="createInvoice()"
+              class="btn-main w-full py-4 text-lg shadow-xl shadow-slate-900/20"
+            >
+              ✨ BUAT LINK PEMBAYARAN
+            </button>
+
+            <div
+              id="result-area"
+              class="hidden mt-8 pt-8 border-t-2 border-dashed border-slate-100"
+            >
+              <label class="input-label text-emerald-600"
+                >Link Berhasil Dibuat!</label
+              >
+              <div class="relative mb-4">
+                <textarea
+                  id="resultUrl"
+                  class="input-field h-24 font-mono text-xs text-slate-600 bg-slate-50/50 resize-none"
+                  readonly
+                ></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <button
+                  onclick="copyLink()"
+                  class="btn-sec flex items-center justify-center gap-2"
+                >
+                  Copy Link</button
+                ><button
+                  onclick="shareWa()"
+                  class="btn-main bg-emerald-500 hover:bg-emerald-600"
+                >
+                  Kirim WA
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 space-y-8">
+          <div
+            class="modern-card p-8 bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-800 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20"
+          >
+            <div
+              class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-400 rounded-full blur-[80px] opacity-30 pointer-events-none"
+            ></div>
+            <div class="relative z-10">
+              <div class="flex justify-between items-start mb-8">
+                <div>
+                  <p
+                    class="text-sm text-indigo-200 font-bold uppercase tracking-widest mb-2"
+                  >
+                    Saldo Dompet
+                  </p>
+                  <h2
+                    class="text-[2.5rem] font-extrabold leading-none"
+                    id="wallet-balance"
+                  >
+                    Rp 0
+                  </h2>
+                </div>
+                <button
+                  onclick="openWithdraw()"
+                  class="bg-white text-slate-900 px-5 py-3 rounded-2xl text-sm font-extrabold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                >
+                  💸 CAIRKAN
+                </button>
+              </div>
+              <div
+                class="bg-black/20 rounded-2xl p-5 backdrop-blur-md border border-white/10 mb-6"
+              >
+                <div class="flex justify-between text-xs mb-3 font-medium">
+                  <span class="text-indigo-200">User</span
+                  ><span class="font-bold text-white" id="wallet-user">-</span>
+                </div>
+                <div
+                  class="w-full bg-black/30 rounded-full h-2.5 mb-2 relative overflow-hidden"
+                >
+                  <div
+                    class="bg-emerald-400 h-2.5 rounded-full relative"
+                    style="width: 100%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="modern-card p-8 w-full max-w-[420px] relative modal-box">
-            <button onclick="closeModal('withdraw-modal')" class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full">✕</button>
-            <div id="wd-step-1">
-                <div class="mb-6"><h3 class="text-2xl font-extrabold text-slate-900 mb-2">💸 Cairkan Saldo</h3><p class="text-slate-500 text-xs">Minimal Rp 10.000</p></div>
-                <div class="space-y-4">
-                    <div><label class="input-label">Nominal</label><input type="number" id="wd-amount" class="input-field" placeholder="Contoh: 50000"></div>
-                    <div><label class="input-label">Bank</label><select id="wd-bank" class="input-field"><option>BCA</option><option>BRI</option><option>Mandiri</option><option>DANA</option><option>GoPay</option></select></div>
-                    <div><label class="input-label">No. Rekening</label><input type="text" id="wd-rek" class="input-field"></div>
-                    <div><label class="input-label">Atas Nama</label><input type="text" id="wd-name" class="input-field"></div>
-                </div>
-                <button onclick="reviewWithdraw()" class="btn-main w-full py-4 mt-8 bg-indigo-600 hover:bg-indigo-700">LANJUTKAN</button>
+    <div
+      id="withdraw-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+      <div class="modern-card p-8 w-full max-w-[420px] relative modal-box">
+        <button
+          onclick="closeModal('withdraw-modal')"
+          class="absolute top-6 right-6 text-slate-400 hover:bg-slate-100 p-2 rounded-full"
+        >
+          ✕
+        </button>
+        <div id="wd-step-1">
+          <div class="mb-6">
+            <h3 class="text-2xl font-extrabold text-slate-900 mb-2">
+              💸 Cairkan Saldo
+            </h3>
+            <p class="text-slate-500 text-xs">Minimal Rp 10.000</p>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <label class="input-label">Nominal</label
+              ><input
+                type="number"
+                id="wd-amount"
+                class="input-field"
+                placeholder="Contoh: 50000"
+              />
             </div>
-            <div id="wd-step-2" class="hidden">
-                <h3 class="text-xl font-extrabold text-slate-900 text-center mb-6">Konfirmasi Data</h3>
-                <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-sm border border-slate-200">
-                    <div class="flex justify-between"><span>Nominal</span><span class="font-bold" id="review-amount">-</span></div>
-                    <div class="flex justify-between"><span>Bank</span><span class="font-bold" id="review-bank">-</span></div>
-                    <div class="flex justify-between"><span>Rekening</span><span class="font-bold" id="review-rek">-</span></div>
-                    <div class="flex justify-between"><span>Nama</span><span class="font-bold" id="review-name">-</span></div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-6">
-                    <button onclick="backToStep1()" class="btn-sec">Ubah</button>
-                    <button onclick="submitWithdraw()" class="btn-main bg-emerald-600">KIRIM</button>
-                </div>
+            <div>
+              <label class="input-label">Bank</label
+              ><select id="wd-bank" class="input-field">
+                <option>BCA</option>
+                <option>BRI</option>
+                <option>Mandiri</option>
+                <option>DANA</option>
+                <option>GoPay</option>
+              </select>
             </div>
+            <div>
+              <label class="input-label">No. Rekening</label
+              ><input type="text" id="wd-rek" class="input-field" />
+            </div>
+            <div>
+              <label class="input-label">Atas Nama</label
+              ><input type="text" id="wd-name" class="input-field" />
+            </div>
+          </div>
+          <button
+            onclick="reviewWithdraw()"
+            class="btn-main w-full py-4 mt-8 bg-indigo-600 hover:bg-indigo-700"
+          >
+            LANJUTKAN
+          </button>
         </div>
+        <div id="wd-step-2" class="hidden">
+          <h3 class="text-xl font-extrabold text-slate-900 text-center mb-6">
+            Konfirmasi Data
+          </h3>
+          <div
+            class="bg-slate-50 p-4 rounded-xl space-y-2 text-sm border border-slate-200"
+          >
+            <div class="flex justify-between">
+              <span>Nominal</span
+              ><span class="font-bold" id="review-amount">-</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Bank</span><span class="font-bold" id="review-bank">-</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Rekening</span
+              ><span class="font-bold" id="review-rek">-</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Nama</span><span class="font-bold" id="review-name">-</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button onclick="backToStep1()" class="btn-sec">Ubah</button>
+            <button onclick="submitWithdraw()" class="btn-main bg-emerald-600">
+              KIRIM
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-8 py-4 rounded-full opacity-0 pointer-events-none transition-all duration-500 text-sm font-bold transform translate-y-10 z-[100] shadow-2xl flex items-center gap-4 border border-white/10 ring-1 ring-white/10"><span id="toast-icon" class="text-xl">🔔</span><span id="toast-msg">Notification</span></div>
+    <div
+      id="toast"
+      class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-8 py-4 rounded-full opacity-0 pointer-events-none transition-all duration-500 text-sm font-bold transform translate-y-10 z-[100] shadow-2xl flex items-center gap-4 border border-white/10 ring-1 ring-white/10"
+    >
+      <span id="toast-icon" class="text-xl">🔔</span
+      ><span id="toast-msg">Notification</span>
+    </div>
 
     <script>
-        const BASE_URL = window.location.origin + "/"; 
-        let items = []; 
-        let currentUser = null; 
+      const BASE_URL = window.location.origin + "/";
+      let items = [];
+      let currentUser = null;
 
-        // --- AUTH & LOGIN ---
-        function toggleRegister(show) { document.getElementById('login-overlay').classList.toggle('hidden', show); document.getElementById('register-overlay').classList.toggle('hidden', !show); }
-        async function doRegister() {
-            const store = document.getElementById('reg-store').value;
-            const email = document.getElementById('reg-email').value;
-            const wa = document.getElementById('reg-wa').value;
-            const pin = document.getElementById('reg-pin').value;
-            if(!store || !email || !pin) return showToast("Lengkapi data!", "⚠️");
-            try {
-                const res = await fetch('/api/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'register', store, email, wa, pin }) });
-                if(res.ok) {
-                    await fetch('/api/send-notif', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'REGISTER', data: {store, email, wa} }) });
-                    showToast("Cek Email untuk PIN!", "✅"); toggleRegister(false);
-                } else { const d = await res.json(); showToast(d.error, "❌"); }
-            } catch(e) { showToast("Gagal koneksi", "⚠️"); }
+      // --- AUTH & LOGIN ---
+      function toggleRegister(show) {
+        document
+          .getElementById("login-overlay")
+          .classList.toggle("hidden", show);
+        document
+          .getElementById("register-overlay")
+          .classList.toggle("hidden", !show);
+      }
+      async function doRegister() {
+        const store = document.getElementById("reg-store").value;
+        const email = document.getElementById("reg-email").value;
+        const wa = document.getElementById("reg-wa").value;
+        const pin = document.getElementById("reg-pin").value;
+        if (!store || !email || !pin) return showToast("Lengkapi data!", "⚠️");
+        try {
+          const res = await fetch("/api/user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "register", store, email, wa, pin }),
+          });
+          if (res.ok) {
+            await fetch("/api/send-notif", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "REGISTER",
+                data: { store, email, wa },
+              }),
+            });
+            showToast("Cek Email untuk PIN!", "✅");
+            toggleRegister(false);
+          } else {
+            const d = await res.json();
+            showToast(d.error, "❌");
+          }
+        } catch (e) {
+          showToast("Gagal koneksi", "⚠️");
         }
-        async function doLogin() {
-            const email = document.getElementById('login-email').value;
-            const pin = document.getElementById('login-pin').value;
-            try {
-                const res = await fetch('/api/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'login', email, pin }) });
-                const resp = await res.json();
-                if(res.ok) {
-                    currentUser = resp.data; 
-                    document.getElementById('login-overlay').classList.add('hidden');
-                    document.getElementById('main-dashboard').classList.remove('hidden');
-                    updateUI(); showToast("Login Berhasil!", "✅");
-                } else { showToast(resp.error, "❌"); }
-            } catch(e) { showToast("Gagal login", "⚠️"); }
+      }
+      async function doLogin() {
+        const email = document.getElementById("login-email").value;
+        const pin = document.getElementById("login-pin").value;
+        try {
+          const res = await fetch("/api/user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "login", email, pin }),
+          });
+          const resp = await res.json();
+          if (res.ok) {
+            currentUser = resp.data;
+            document.getElementById("login-overlay").classList.add("hidden");
+            document
+              .getElementById("main-dashboard")
+              .classList.remove("hidden");
+            updateUI();
+            showToast("Login Berhasil!", "✅");
+          } else {
+            showToast(resp.error, "❌");
+          }
+        } catch (e) {
+          showToast("Gagal login", "⚠️");
         }
-        function updateUI() {
-            if(!currentUser) return;
-            document.getElementById('nav-store-name').innerText = currentUser.store;
-            document.getElementById('wallet-user').innerText = currentUser.email;
-            document.getElementById('wallet-balance').innerText = "Rp " + currentUser.balance.toLocaleString('id-ID');
+      }
+      function updateUI() {
+        if (!currentUser) return;
+        document.getElementById("nav-store-name").innerText = currentUser.store;
+        document.getElementById("wallet-user").innerText = currentUser.email;
+        document.getElementById("wallet-balance").innerText =
+          "Rp " + currentUser.balance.toLocaleString("id-ID");
+      }
+      async function refreshBalance() {
+        if (!currentUser) return;
+        try {
+          const res = await fetch("/api/user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "check_balance",
+              email: currentUser.email,
+            }),
+          });
+          const data = await res.json();
+          if (data.balance !== undefined) {
+            currentUser.balance = data.balance;
+            updateUI();
+            showToast("Saldo diperbarui", "💰");
+          }
+        } catch (e) {}
+      }
+      function logout() {
+        if (confirm("Keluar?")) {
+          currentUser = null;
+          location.reload();
         }
-        async function refreshBalance() {
-            if(!currentUser) return;
-            try {
-                const res = await fetch('/api/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'check_balance', email: currentUser.email }) });
-                const data = await res.json();
-                if(data.balance !== undefined) { currentUser.balance = data.balance; updateUI(); showToast("Saldo diperbarui", "💰"); }
-            } catch(e) {}
-        }
-        function logout() { if(confirm("Keluar?")) { currentUser = null; location.reload(); } }
+      }
 
-        // --- INVOICE LOGIC (UPDATE: ADD MERCHANT EMAIL) ---
-        function addItem() { if(items.length>=10)return; items.push({ id: Date.now(), name: "", price: 0 }); renderItems(); }
-        function updateItem(id, f, v) { const i = items.find(x => x.id === id); if(i) { f === 'price' ? i.price = parseInt(v.replace(/\./g, "")||0) : i.name = v; } renderItems(false); }
-        function formatCurrencyInput(input) { let v = input.value.replace(/\D/g, ""); input.value = v ? parseInt(v).toLocaleString('id-ID') : ""; }
-        function renderItems(full=true) {
-            document.getElementById('item-count').innerText = `${items.length}/10`;
-            document.getElementById('total-display').innerText = "Rp " + items.reduce((s, i) => s + (i.price || 0), 0).toLocaleString('id-ID');
-            if(!full) return;
-            document.getElementById('items-wrapper').innerHTML = items.map((i,x) => `
+      // --- INVOICE LOGIC ---
+      function addItem() {
+        if (items.length >= 10) return;
+        items.push({ id: Date.now(), name: "", price: 0 });
+        renderItems();
+      }
+      function updateItem(id, f, v) {
+        const i = items.find((x) => x.id === id);
+        if (i) {
+          f === "price"
+            ? (i.price = parseInt(v.replace(/\./g, "") || 0))
+            : (i.name = v);
+        }
+        renderItems(false);
+      }
+      function formatCurrencyInput(input) {
+        let v = input.value.replace(/\D/g, "");
+        input.value = v ? parseInt(v).toLocaleString("id-ID") : "";
+      }
+      function renderItems(full = true) {
+        document.getElementById("item-count").innerText = `${items.length}/10`;
+        document.getElementById("total-display").innerText =
+          "Rp " +
+          items.reduce((s, i) => s + (i.price || 0), 0).toLocaleString("id-ID");
+        if (!full) return;
+        document.getElementById("items-wrapper").innerHTML = items
+          .map(
+            (i, x) => `
                 <div class="flex gap-3 items-start mb-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    <span class="bg-slate-100 text-[10px] font-bold text-slate-400 px-2 py-1 rounded">${x+1}</span>
+                    <span class="bg-slate-100 text-[10px] font-bold text-slate-400 px-2 py-1 rounded">${x + 1}</span>
                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-5 gap-3">
                         <div class="sm:col-span-3"><input type="text" placeholder="Produk" class="input-field w-full text-sm" value="${i.name}" oninput="updateItem(${i.id},'name',this.value)"></div>
-                        <div class="sm:col-span-2"><input type="text" placeholder="0" class="input-field text-right font-bold" value="${i.price>0?i.price.toLocaleString('id-ID'):''}" onkeyup="formatCurrencyInput(this)" onchange="updateItem(${i.id},'price',this.value)"></div>
+                        <div class="sm:col-span-2"><input type="text" placeholder="0" class="input-field text-right font-bold" value="${i.price > 0 ? i.price.toLocaleString("id-ID") : ""}" onkeyup="formatCurrencyInput(this)" onchange="updateItem(${i.id},'price',this.value)"></div>
                     </div>
-                </div>`).join('');
+                </div>`,
+          )
+          .join("");
+      }
+
+      async function createInvoice() {
+        if (!currentUser) return showToast("Login dulu!", "⚠️");
+        const wa = document.getElementById("custWa").value;
+        const email = document.getElementById("custEmail").value;
+        const total = items.reduce((s, i) => s + (i.price || 0), 0);
+        if (!wa || !email || total === 0)
+          return showToast("Lengkapi data!", "⚠️");
+
+        // --- PERBAIKAN: Ambil Nama Produk Pertama ---
+        let prodName = items[0].name || "Pembayaran";
+        if (items.length > 1) {
+          prodName += " (+ " + (items.length - 1) + " item)";
         }
 
-        async function createInvoice() {
-            if(!currentUser) return showToast("Login dulu!", "⚠️");
-            const wa = document.getElementById('custWa').value;
-            const email = document.getElementById('custEmail').value;
-            const total = items.reduce((s, i) => s + (i.price || 0), 0);
-            if(!wa || !email || total === 0) return showToast("Lengkapi data!", "⚠️");
+        const itemsEncoded = btoa(
+          JSON.stringify(items.map((i) => ({ n: i.name, p: i.price }))),
+        );
+        const refId = "INV-" + Date.now();
 
-            const itemsEncoded = btoa(JSON.stringify(items.map(i => ({n: i.name, p: i.price}))));
-            const prodName = items.length + " Items";
-            const refId = "INV-" + Date.now();
-            
-            // --- UPDATE: Masukkan 'merchant' email ke URL ---
-            const params = new URLSearchParams({ 
-                store: currentUser.store, price: total, items: itemsEncoded, 
-                prod: prodName, ref_id: refId, wa, email, 
-                merchant: currentUser.email // <--- WAJIB ADA
-            });
-            const finalUrl = `${BASE_URL}?${params.toString()}`;
+        const params = new URLSearchParams({
+          store: currentUser.store,
+          price: total,
+          items: itemsEncoded,
+          prod: prodName, // Nama asli produk dikirim di sini
+          ref_id: refId,
+          wa,
+          email,
+          merchant: currentUser.email,
+        });
+        const finalUrl = `${BASE_URL}?${params.toString()}`;
 
-            document.getElementById('resultUrl').value = finalUrl;
-            document.getElementById('result-area').classList.remove('hidden');
-            
-            fetch('/api/send-notif', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type: 'CREATE_INVOICE', data: { store: currentUser.store, price: total.toLocaleString('id-ID'), prod: prodName, url: finalUrl } }) });
-            showToast("Link Siap!", "✨");
+        document.getElementById("resultUrl").value = finalUrl;
+        document.getElementById("result-area").classList.remove("hidden");
+
+        fetch("/api/send-notif", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "CREATE_INVOICE",
+            data: {
+              store: currentUser.store,
+              price: total.toLocaleString("id-ID"),
+              prod: prodName,
+              url: finalUrl,
+            },
+          }),
+        });
+        showToast("Link Siap!", "✨");
+      }
+
+      // --- WITHDRAW ---
+      function openWithdraw() {
+        document.getElementById("withdraw-modal").classList.remove("hidden");
+        backToStep1();
+      }
+      function reviewWithdraw() {
+        const amount = document.getElementById("wd-amount").value;
+        if (parseInt(amount) < 10000) return showToast("Min 10.000", "⚠️");
+        if (parseInt(amount) > currentUser.balance)
+          return showToast("Saldo kurang", "💸");
+        document.getElementById("review-amount").innerText =
+          "Rp " + parseInt(amount).toLocaleString("id-ID");
+        document.getElementById("review-bank").innerText =
+          document.getElementById("wd-bank").value;
+        document.getElementById("review-rek").innerText =
+          document.getElementById("wd-rek").value;
+        document.getElementById("review-name").innerText =
+          document.getElementById("wd-name").value;
+        document.getElementById("wd-step-1").classList.add("hidden");
+        document.getElementById("wd-step-2").classList.remove("hidden");
+      }
+      function backToStep1() {
+        document.getElementById("wd-step-2").classList.add("hidden");
+        document.getElementById("wd-step-1").classList.remove("hidden");
+      }
+      async function submitWithdraw() {
+        const amount = parseInt(document.getElementById("wd-amount").value);
+        const res = await fetch("/api/send-notif", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "WITHDRAW",
+            data: {
+              store: currentUser.store,
+              email: currentUser.email,
+              amount,
+              bank: document.getElementById("wd-bank").value,
+              rek: document.getElementById("wd-rek").value,
+              name: document.getElementById("wd-name").value,
+            },
+          }),
+        });
+        if (res.ok) {
+          showToast("Terkirim!", "✅");
+          closeModal("withdraw-modal");
+          currentUser.balance -= amount;
+          updateUI();
         }
+      }
 
-        // --- WITHDRAW ---
-        function openWithdraw() { document.getElementById('withdraw-modal').classList.remove('hidden'); backToStep1(); }
-        function reviewWithdraw() {
-            const amount = document.getElementById('wd-amount').value;
-            if(parseInt(amount) < 10000) return showToast("Min 10.000", "⚠️");
-            if(parseInt(amount) > currentUser.balance) return showToast("Saldo kurang", "💸");
-            document.getElementById('review-amount').innerText = "Rp " + parseInt(amount).toLocaleString('id-ID');
-            document.getElementById('review-bank').innerText = document.getElementById('wd-bank').value;
-            document.getElementById('review-rek').innerText = document.getElementById('wd-rek').value;
-            document.getElementById('review-name').innerText = document.getElementById('wd-name').value;
-            document.getElementById('wd-step-1').classList.add('hidden'); document.getElementById('wd-step-2').classList.remove('hidden');
-        }
-        function backToStep1() { document.getElementById('wd-step-2').classList.add('hidden'); document.getElementById('wd-step-1').classList.remove('hidden'); }
-        async function submitWithdraw() {
-            const amount = parseInt(document.getElementById('wd-amount').value);
-            const res = await fetch('/api/send-notif', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type: 'WITHDRAW', data: { store: currentUser.store, email: currentUser.email, amount, bank: document.getElementById('wd-bank').value, rek: document.getElementById('wd-rek').value, name: document.getElementById('wd-name').value } }) });
-            if(res.ok) { showToast("Terkirim!", "✅"); closeModal('withdraw-modal'); currentUser.balance -= amount; updateUI(); }
-        }
+      // --- UTILS ---
+      function copyLink() {
+        document.getElementById("resultUrl").select();
+        navigator.clipboard.writeText(
+          document.getElementById("resultUrl").value,
+        );
+        showToast("Disalin!", "📋");
+      }
+      function shareWa() {
+        window.open(
+          `https://wa.me/${document.getElementById("custWa").value}?text=Tagihan:%20${document.getElementById("resultUrl").value}`,
+          "_blank",
+        );
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.add("hidden");
+      }
+      function showToast(msg, icon = "🔔") {
+        const t = document.getElementById("toast");
+        document.getElementById("toast-msg").innerText = msg;
+        document.getElementById("toast-icon").innerText = icon;
+        t.classList.remove("opacity-0", "translate-y-10");
+        setTimeout(() => t.classList.add("opacity-0", "translate-y-10"), 3000);
+      }
 
-        // --- UTILS ---
-        function copyLink() { document.getElementById("resultUrl").select(); navigator.clipboard.writeText(document.getElementById("resultUrl").value); showToast("Disalin!", "📋"); }
-        function shareWa() { window.open(`https://wa.me/${document.getElementById('custWa').value}?text=Tagihan:%20${document.getElementById('resultUrl').value}`, '_blank'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function showToast(msg, icon="🔔") { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').innerText = icon; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
-        
-        addItem();
+      addItem();
     </script>
-</body>
+  </body>
 </html>
