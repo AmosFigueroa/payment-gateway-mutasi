@@ -4,21 +4,18 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const GAS_EMAIL_URL = process.env.GAS_EMAIL_URL;
 const SECRET_KEY = process.env.SECRET_KEY;
 
-const Order =
-  mongoose.models.Order ||
-  mongoose.model(
-    "Order",
-    new mongoose.Schema({
-      order_id: String,
-      ref_id: String,
-      total_pay: Number,
-      status: String,
-      customer_email: String,
-      merchant_email: String,
-      store_name: String,
-      product_name: String,
-    }),
-  );
+const OrderSchema = new mongoose.Schema({
+  order_id: String,
+  ref_id: String,
+  total_pay: Number,
+  status: { type: String, default: "UNPAID" },
+  customer_email: String,
+  merchant_email: String,
+  store_name: String,
+  product_name: String,
+  created_at: { type: Date, default: Date.now },
+});
+const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
 const User =
   mongoose.models.User ||
@@ -31,15 +28,16 @@ const User =
   );
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).send("Not Allowed");
-  const { secret, message, title, text } = req.body;
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method Not Allowed" });
+
+  const { secret, message, title, text, package_name } = req.body;
   if (SECRET_KEY && secret !== SECRET_KEY)
-    return res.status(401).send("Unauthorized");
+    return res.status(401).json({ error: "Unauthorized" });
 
   try {
     if (mongoose.connection.readyState !== 1)
       await mongoose.connect(MONGODB_URI);
-
     const fullMsg = `${title || ""} ${text || ""} ${message || ""}`;
     const matches = fullMsg.match(/([\d\.]+)/g);
     let nominal = 0;
@@ -60,7 +58,7 @@ export default async function handler(req, res) {
     );
 
     if (updatedOrder) {
-      // 1. Tambah Saldo Merchant
+      // 1. Update Saldo Merchant
       if (updatedOrder.merchant_email) {
         await User.findOneAndUpdate(
           { email: updatedOrder.merchant_email },
@@ -69,18 +67,19 @@ export default async function handler(req, res) {
         );
       }
 
-      // 2. Kirim Email Bukti ke Pembeli
+      // 2. KIRIM EMAIL KE PEMBELI
       if (GAS_EMAIL_URL && updatedOrder.customer_email) {
-        fetch(GAS_EMAIL_URL, {
+        console.log(`Mengirim struk email ke: ${updatedOrder.customer_email}`);
+        await fetch(GAS_EMAIL_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             type: "PAYMENT_SUCCESS",
             data: {
               store: updatedOrder.store_name,
-              email: updatedOrder.customer_email,
+              email: updatedOrder.customer_email, // TUJUAN EMAIL PEMBELI
               amount: updatedOrder.total_pay.toLocaleString("id-ID"),
-              product: updatedOrder.product_name, // MENGIRIM NAMA ASLI KE EMAIL
+              product: updatedOrder.product_name,
               ref: updatedOrder.ref_id,
               bank: "QRIS",
               date: new Date().toLocaleString("id-ID", {
@@ -88,12 +87,12 @@ export default async function handler(req, res) {
               }),
             },
           }),
-        }).catch((e) => console.error("Email Error:", e));
+        }).catch((e) => console.error("Email Error:", e.message));
       }
       return res.status(200).json({ status: "success" });
     }
     return res.status(200).json({ status: "ignored" });
   } catch (e) {
-    return res.status(500).send(e.message);
+    return res.status(500).json({ error: e.message });
   }
 }

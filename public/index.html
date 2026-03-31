@@ -14,6 +14,7 @@
       href="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
@@ -73,7 +74,7 @@
         display: none;
       }
 
-      /* CUSTOM MODAL STYLE */
+      /* FIX UKURAN MODAL */
       .modal-backdrop {
         background: rgba(15, 23, 42, 0.8);
         backdrop-filter: blur(8px);
@@ -83,14 +84,14 @@
         z-index: 100;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding: 24px;
       }
       .modal-content {
         background: white;
-        border-radius: 2rem;
+        border-radius: 2.5rem;
         width: 100%;
-        max-w: 340px;
-        padding: 30px;
+        max-width: 320px;
+        padding: 32px 24px;
         text-align: center;
         transform: scale(0.9);
         opacity: 0;
@@ -103,46 +104,53 @@
         transform: scale(1);
         opacity: 1;
       }
+
+      .btn-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 11px;
+        transition: all 0.2s;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+      }
+      .btn-icon:active {
+        transform: scale(0.95);
+        background: #f1f5f9;
+      }
     </style>
   </head>
   <body>
     <div id="cancel-modal" class="modal-backdrop">
       <div class="modal-content shadow-2xl border border-slate-100">
         <div
-          class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500"
+          class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5 text-red-500"
         >
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
-          </svg>
+          <i data-lucide="alert-circle" class="w-8 h-8"></i>
         </div>
-        <h3 class="text-xl font-extrabold text-slate-900 mb-2">
+        <h3 class="text-lg font-extrabold text-slate-900 mb-2 leading-tight">
           Batalkan Transaksi?
         </h3>
-        <p class="text-sm text-slate-500 mb-8 leading-relaxed">
-          Pesanan Anda akan dibatalkan secara permanen. Anda yakin?
+        <p class="text-[13px] text-slate-500 mb-8 leading-relaxed px-2">
+          Data tagihan Anda akan dihapus secara permanen dari sistem.
         </p>
         <div class="grid grid-cols-2 gap-3">
           <button
             onclick="closeCancelModal()"
-            class="py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl text-xs active:scale-95 transition-all"
+            class="py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl text-[11px] active:scale-95 transition-all"
           >
             TIDAK
           </button>
           <button
             onclick="confirmCancel()"
-            class="py-3.5 bg-red-500 text-white font-bold rounded-2xl text-xs shadow-lg shadow-red-500/30 active:scale-95 transition-all"
+            class="py-3.5 bg-red-500 text-white font-bold rounded-2xl text-[11px] shadow-lg shadow-red-500/30 active:scale-95 transition-all uppercase"
           >
-            YA, BATAL
+            Ya, Batal
           </button>
         </div>
       </div>
@@ -203,7 +211,6 @@
         customerEmail: "",
         merchantEmail: "",
         returnUrl: "",
-        timerInterval: null,
       };
       const qrisLogo =
         "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
@@ -223,9 +230,7 @@
           document.getElementById("header-title").innerText =
             decodeURIComponent(params.get("store"));
         if (state.totalAmount > 0) renderStep1();
-        else
-          document.getElementById("app-content").innerHTML =
-            `<div class="text-center py-20 font-bold">Link Tidak Valid</div>`;
+        lucide.createIcons();
       };
 
       function renderStep1() {
@@ -245,7 +250,7 @@
                     <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 text-left">Metode Pembayaran</h2>
                     <div class="p-5 bg-[#1e293b] text-white rounded-[1.2rem] shadow-xl border border-transparent flex items-center gap-4">
                         <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-2"><img src="${qrisLogo}" class="object-contain w-full h-full"></div>
-                        <div class="text-left"><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-[10px] text-slate-400">Support All E-Wallet & M-Banking</p></div>
+                        <div class="text-left"><h4 class="font-bold text-sm">QRIS (Otomatis)</h4><p class="text-[10px] text-slate-400 uppercase">SUPPORT ALL E-WALLET</p></div>
                     </div>
                 </div>`;
         document.getElementById("action-area").innerHTML =
@@ -282,27 +287,32 @@
         document.getElementById("app-content").innerHTML = `
                 <div class="px-4 py-4 text-center fade-enter flex flex-col items-center">
                     <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold mb-6 border border-red-100 animate-pulse">
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1">15:00</span>
+                        <i data-lucide="clock" class="w-3 h-3"></i> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1">15:00</span>
                     </div>
                     <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-xl mb-6 relative overflow-hidden w-full">
                         <div class="bg-[#bf1e2e] h-10 -mx-5 -mt-5 mb-5 flex items-center justify-between px-4">
-                            <img src="${qrisLogo}" class="h-5 brightness-0 invert">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-5 brightness-0 invert">
                             <span class="text-white font-bold text-[10px] tracking-widest uppercase">National Standard</span>
                         </div>
-                        <h3 class="font-bold mb-3 text-slate-800 text-sm uppercase">${apiData.qris_name || "WAGO MERCHANT"}</h3>
+                        <h3 class="font-bold mb-3 text-slate-800 text-sm uppercase">${apiData.qris_name || "MERCHANT QRIS"}</h3>
                         <img src="${apiData.qr_image}" class="w-full max-w-[260px] mx-auto border-2 border-slate-900 rounded-lg p-1">
-                        <div class="mt-4 flex gap-2 justify-center">
-                            <button onclick="downloadQR('${apiData.qr_image}', '${apiData.order_id}')" class="bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-[9px] font-extrabold border border-slate-200 uppercase">⬇️ Download</button>
-                            <button onclick="copyNominal('${apiData.total_pay}')" class="bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-[9px] font-extrabold border border-slate-200 uppercase">📋 Salin Rp</button>
+                        
+                        <div class="mt-5 flex gap-2 justify-center">
+                            <button onclick="downloadQR('${apiData.qr_image}', '${apiData.order_id}')" class="btn-icon">
+                                <i data-lucide="download" class="w-4 h-4"></i> DOWNLOAD
+                            </button>
+                            <button onclick="copyNominal('${apiData.total_pay}')" class="btn-icon">
+                                <i data-lucide="copy" class="w-4 h-4"></i> SALIN RP
+                            </button>
                         </div>
-                        <p class="text-[9px] text-slate-400 font-mono mt-4 uppercase tracking-widest">ID: ${apiData.order_id}</p>
+                        <p class="text-[9px] text-slate-400 font-mono mt-4 uppercase">ID: ${apiData.order_id}</p>
                     </div>
-                    <h2 class="text-3xl font-black text-slate-800">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
-                    <p class="text-[10px] text-emerald-600 font-bold mt-1 uppercase">Termasuk kode unik (+${apiData.unique_code || 0})</p>
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
+                    <p class="text-[10px] text-emerald-600 font-bold mt-1 uppercase">Wajib bayar sesuai nominal di atas</p>
                 </div>`;
         document.getElementById("action-area").innerHTML =
           `<button onclick="openCancelModal()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs shadow-sm active:scale-95 transition-all">BATALKAN TRANSAKSI</button>`;
-        startTimer(15 * 60);
+        lucide.createIcons();
         startCheckingStatus(apiData.order_id);
       }
 
@@ -329,28 +339,12 @@
           .then(() => alert("Nominal disalin: " + val));
       }
 
-      function startTimer(duration) {
-        let timer = duration;
-        state.timerInterval = setInterval(() => {
-          let m = parseInt(timer / 60, 10),
-            s = parseInt(timer % 60, 10);
-          if (document.querySelector("#timer"))
-            document.querySelector("#timer").textContent =
-              (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
-          if (--timer < 0) {
-            clearInterval(state.timerInterval);
-            location.reload();
-          }
-        }, 1000);
-      }
-
       function startCheckingStatus(id) {
         const checker = setInterval(async () => {
           const res = await fetch(`/api/status?order_id=${id}&t=${Date.now()}`);
           const d = await res.json();
           if (d.status === "PAID") {
             clearInterval(checker);
-            if (state.timerInterval) clearInterval(state.timerInterval);
             if (d.product_name) state.productName = d.product_name;
             renderStep3();
           }
@@ -371,8 +365,10 @@
                 <div class="p-2 fade-enter flex flex-col items-center justify-center">
                     <div class="w-full bg-white shadow-2xl rounded-[1.5rem] overflow-hidden relative border min-h-[350px]">
                         <div class="h-2 bg-emerald-500 w-full"></div>
-                        <div class="p-6 text-center border-b border-dashed border-slate-200">
-                            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm"><svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                        <div class="p-6 text-center border-b border-dashed border-slate-200 bg-white">
+                            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm">
+                                <i data-lucide="check-circle" class="w-8 h-8 text-emerald-500"></i>
+                            </div>
                             <h2 class="text-xl font-black text-slate-900 tracking-tight uppercase">Pembayaran Lunas</h2>
                             <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Terima kasih, pesanan Anda telah lunas</p>
                         </div>
@@ -386,10 +382,11 @@
                             </div>
                         </div><div class="receipt-cut"></div>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-bold">Kembali dalam <span id="redirect-timer" class="text-slate-900">5</span> detik</p>
+                    <p class="text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-bold">Otomatis kembali dalam <span id="redirect-timer" class="text-slate-900">5</span> detik</p>
                 </div>`;
         document.getElementById("action-area").innerHTML =
           `<button onclick="window.location.href='${state.returnUrl}'" class="w-full py-4 bg-[#0f172a] text-white font-bold rounded-2xl shadow-xl">KEMBALI KE TOKO</button>`;
+        lucide.createIcons();
         let s = 5;
         const redirect = setInterval(() => {
           s--;
