@@ -1,12 +1,10 @@
 import mongoose from "mongoose";
 
-// --- KONFIGURASI ENV ---
 const MONGODB_URI = process.env.MONGODB_URI;
 const GAS_EMAIL_URL = process.env.GAS_EMAIL_URL;
-const SECRET_KEY = process.env.SECRET_KEY; // Password dari App Mutasi
-// Token Telegram sudah dihapus
+const SECRET_KEY = process.env.SECRET_KEY;
 
-// --- 1. SCHEMA DATABASE (Wajib Sinkron) ---
+// 1. SCHEMA DATABASE
 const OrderSchema = new mongoose.Schema({
   order_id: String,
   ref_id: String,
@@ -40,10 +38,14 @@ export default async function handler(req, res) {
     return res.status(401).send("Unauthorized");
 
   try {
-    if (mongoose.connection.readyState !== 1)
-      await mongoose.connect(MONGODB_URI);
+    // Koneksi DB dengan Timeout agar tidak stuck 3 detik
+    if (mongoose.connection.readyState !== 1) {
+      await mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+      });
+    }
 
-    // --- 2. PARSING DATA MUTASI ---
+    // --- 2. DETEKSI NAMA BANK (LOGIKA YANG MAS CARI) ---
     const fullMsg = `${message || ""} ${title || ""} ${text || ""} ${big_text || ""}`;
     const pkg = package_name ? package_name.toLowerCase() : "";
 
@@ -64,26 +66,38 @@ export default async function handler(req, res) {
       source = "Mandiri";
     }
 
-    const match = fullMsg.match(/Rp\s?\.?([\d,.]+)/i);
-    if (!match) return res.status(200).send("No Nominal Detected");
+    // --- 3. PARSING ANGKA (VERSI LEBIH KUAT) ---
+    const matches = fullMsg.match(/([\d\.]+)/g);
+    let nominalTerdeteksi = 0;
 
-    const rawNominal = match[1].replace(/\./g, "").replace(/,/g, ".");
-    const nominal = parseInt(rawNominal.split(".")[0]);
+    if (matches) {
+      for (let m of matches) {
+        let num = parseInt(m.replace(/\./g, ""));
+        if (num >= 1000) {
+          nominalTerdeteksi = num;
+          break;
+        }
+      }
+    }
 
-    console.log(`Log Mutasi: ${source} - Rp ${nominal}`);
+    console.log(`Log Mutasi: ${source} - Rp ${nominalTerdeteksi}`);
 
-    // --- 3. CARI ORDER YANG COCOK ---
+    if (nominalTerdeteksi === 0) {
+      return res
+        .status(200)
+        .json({ status: "ignored", reason: "No nominal detected" });
+    }
+
+    // --- 4. CARI & UPDATE ORDER ---
     const paidOrder = await Order.findOne({
       status: "UNPAID",
-      total_pay: nominal,
+      total_pay: nominalTerdeteksi,
     });
 
     if (paidOrder) {
-      // A. UPDATE STATUS JADI LUNAS
       paidOrder.status = "PAID";
       await paidOrder.save();
 
-      // B. UPDATE SALDO MERCHANT
       if (paidOrder.merchant_email) {
         await User.findOneAndUpdate(
           { email: paidOrder.merchant_email },
@@ -91,7 +105,7 @@ export default async function handler(req, res) {
         );
       }
 
-      // C. KIRIM EMAIL STRUK KE PEMBELI (Via GAS)
+      // Kirim Email Struk dengan info Bank/Source
       if (GAS_EMAIL_URL && paidOrder.customer_email) {
         fetch(GAS_EMAIL_URL, {
           method: "POST",
@@ -107,15 +121,13 @@ export default async function handler(req, res) {
               date: new Date().toLocaleString("id-ID", {
                 timeZone: "Asia/Jakarta",
               }),
-              bank: source,
+              bank: source, // Nama bank muncul di sini
             },
           }),
         }).catch((e) => console.error("Email Error:", e));
       }
 
-      // FITUR TELEGRAM SUDAH DIHAPUS SEPENUHNYA DARI SINI
-
-      // D. WEBHOOK KE WEBSITE UTAMA
+      // Webhook ke website utama
       if (paidOrder.notify_url && paidOrder.notify_url.startsWith("http")) {
         fetch(paidOrder.notify_url, {
           method: "POST",
@@ -124,21 +136,19 @@ export default async function handler(req, res) {
             status: "PAID",
             order_id: paidOrder.order_id,
             ref_id: paidOrder.ref_id,
-            amount: nominal,
+            amount: nominalTerdeteksi,
           }),
         }).catch((e) => console.error("Webhook Error:", e));
       }
 
-      return res
-        .status(200)
-        .json({ status: "success", message: "Order Paid & Processed" });
+      return res.status(200).json({ status: "success", message: "Order Paid" });
     }
 
     return res
       .status(200)
-      .json({ status: "ignored", message: "No matching unpaid order" });
+      .json({ status: "ignored", message: "No matching order" });
   } catch (e) {
-    console.error("Callback Error:", e);
+    console.error("Callback Error:", e.message);
     return res.status(500).send("Server Error");
   }
 }
