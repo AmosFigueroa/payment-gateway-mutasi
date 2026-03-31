@@ -12,10 +12,7 @@ const OrderSchema = new mongoose.Schema({
   customer_email: String,
   merchant_email: String,
   store_name: String,
-  amount_original: Number,
-  unique_code: Number,
   total_pay: Number,
-  method: String,
   status: { type: String, default: "UNPAID" },
   qris_string: String,
   created_at: { type: Date, default: Date.now },
@@ -23,7 +20,6 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
-// HELPER: CRC16 & Dynamic QRIS
 function crc16(str) {
   let crc = 0xffff;
   for (let i = 0; i < str.length; i++) {
@@ -51,14 +47,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "Method not allowed" });
-
-  const DATA_PAYMENT = {
-    qris: "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204899953033605802ID5922Wago Digital Solutions6006SLEMAN61055529462070703A016304C0F0",
-  };
 
   try {
     if (mongoose.connection.readyState !== 1)
@@ -72,31 +61,42 @@ export default async function handler(req, res) {
       store_name,
       ref_id,
     } = req.body;
+
+    // VALIDASI: Pastikan product_name tidak kosong atau "1 Items"
+    const finalProductName =
+      product_name && product_name !== "1 Items"
+        ? product_name
+        : "Pembayaran Digital";
+
     const uniqueCode = Math.floor(Math.random() * 99) + 1;
     const totalPay = parseInt(price) + uniqueCode;
     const orderId = "ORD-" + Date.now();
 
-    const dynamicQris = convertToDynamic(DATA_PAYMENT.qris, totalPay);
+    const qrisRaw =
+      "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204899953033605802ID5922Wago Digital Solutions6006SLEMAN61055529462070703A016304C0F0";
+    const dynamicQris = convertToDynamic(qrisRaw, totalPay);
     const qrImage = await QRCode.toDataURL(dynamicQris);
 
-    const newOrder = await Order.create({
+    await Order.create({
       order_id: orderId,
       ref_id: ref_id || "-",
-      product_name: product_name, // Simpan Nama Produk Asli
+      product_name: finalProductName, // MENYIMPAN NAMA ASLI KE DB
       customer_email: customer_email,
       merchant_email: merchant_email,
-      store_name: store_name || "Wago Store",
+      store_name: store_name || "Wagopay",
       total_pay: totalPay,
       status: "UNPAID",
       qris_string: qrImage,
     });
 
-    return res.status(200).json({
-      status: "success",
-      order_id: newOrder.order_id,
-      total_pay: totalPay,
-      qr_image: qrImage,
-    });
+    return res
+      .status(200)
+      .json({
+        status: "success",
+        order_id: orderId,
+        total_pay: totalPay,
+        qr_image: qrImage,
+      });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
