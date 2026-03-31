@@ -10,6 +10,8 @@ const OrderSchema = new mongoose.Schema({
   customer_email: String,
   merchant_email: String,
   store_name: String,
+  amount_original: Number,
+  unique_code: Number,
   total_pay: Number,
   status: { type: String, default: "UNPAID" },
   qris_string: String,
@@ -17,6 +19,20 @@ const OrderSchema = new mongoose.Schema({
 });
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
+// Helper Parse Nama dari Data QRIS (Tag 59)
+function parseQrisName(qrisStr) {
+  let i = 0;
+  while (i < qrisStr.length) {
+    const id = qrisStr.substr(i, 2);
+    const len = parseInt(qrisStr.substr(i + 2, 2));
+    const val = qrisStr.substr(i + 4, len);
+    if (id === "59") return val;
+    i += 4 + len;
+  }
+  return "Wago Merchant";
+}
+
+// Helper Dynamic QRIS (Tag 54)
 function crc16(str) {
   let crc = 0xffff;
   for (let i = 0; i < str.length; i++) {
@@ -34,15 +50,13 @@ function convertToDynamic(qrisRaw, amount) {
   let tag54 = "54" + amountStr.length.toString().padStart(2, "0") + amountStr;
   let cleanQris = qrisRaw.substring(0, qrisRaw.length - 4);
   let splitIndex = cleanQris.lastIndexOf("6304");
-  if (splitIndex === -1) return qrisRaw;
   let beforeCRC = cleanQris.substring(0, splitIndex);
   let newString = beforeCRC + tag54 + "6304";
   return newString + crc16(newString);
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") return res.status(405).end();
   try {
     if (mongoose.connection.readyState !== 1)
       await mongoose.connect(MONGODB_URI);
@@ -55,26 +69,25 @@ export default async function handler(req, res) {
       ref_id,
     } = req.body;
 
-    // VALIDASI: Hindari Nama Item Rusak
-    const finalProdName =
-      product_name && product_name !== "1 Items"
-        ? product_name
-        : "Produk Digital";
-    const totalPay = parseInt(price) + (Math.floor(Math.random() * 99) + 1);
+    const uniqueCode = Math.floor(Math.random() * 99) + 1;
+    const totalPay = parseInt(price) + uniqueCode;
     const orderId = "ORD-" + Date.now();
 
     const qrisRaw =
       "00020101021126610014COM.GO-JEK.WWW01189360091438225844470210G8225844470303UMI51440014ID.CO.QRIS.WWW0215ID10243639137310303UMI5204899953033605802ID5922Wago Digital Solutions6006SLEMAN61055529462070703A016304C0F0";
+    const qrisName = parseQrisName(qrisRaw);
     const dynamicQris = convertToDynamic(qrisRaw, totalPay);
     const qrImage = await QRCode.toDataURL(dynamicQris);
 
     await Order.create({
       order_id: orderId,
       ref_id: ref_id || "-",
-      product_name: finalProdName,
+      product_name: product_name || "Produk Digital",
       customer_email: customer_email,
       merchant_email: merchant_email,
-      store_name: store_name || "Wagopay",
+      store_name: store_name || qrisName,
+      amount_original: parseInt(price),
+      unique_code: uniqueCode,
       total_pay: totalPay,
       status: "UNPAID",
       qris_string: qrImage,
@@ -87,6 +100,8 @@ export default async function handler(req, res) {
         order_id: orderId,
         total_pay: totalPay,
         qr_image: qrImage,
+        qris_name: qrisName,
+        unique_code: uniqueCode,
       });
   } catch (error) {
     return res.status(500).json({ error: error.message });
