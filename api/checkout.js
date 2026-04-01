@@ -13,6 +13,38 @@ const OrderSchema = new mongoose.Schema({
 });
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
+// --- FUNGSI STANDAR QRIS DINAMIS ---
+function generateCRC16(str) {
+  let crc = 0xffff;
+  for (let i = 0; i < str.length; i++) {
+    crc ^= str.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021;
+      else crc = crc << 1;
+    }
+  }
+  let hex = (crc & 0xffff).toString(16).toUpperCase();
+  return hex.padStart(4, "0");
+}
+
+function makeDynamic(qrisRaw, amount) {
+  // Hapus CRC lama (4 digit terakhir)
+  qrisRaw = qrisRaw.substring(0, qrisRaw.length - 4);
+
+  // Buat Tag 54 (Nominal)
+  const amountStr = amount.toString();
+  const tag54 = "54" + amountStr.length.toString().padStart(2, "0") + amountStr;
+
+  // Cari posisi pemisah (Tag 58 = Negara ID)
+  const splitAt = qrisRaw.indexOf("5802ID");
+  const before = qrisRaw.substring(0, splitAt);
+  const after = qrisRaw.substring(splitAt);
+
+  // Gabungkan & Hitung ulang CRC
+  const finalString = before + tag54 + after;
+  return finalString + generateCRC16(finalString);
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -23,7 +55,7 @@ export default async function handler(req, res) {
 
     const { price, product_name, store_name } = req.body;
 
-    // QRIS STATIS YANG BENAR (Tanpa teks git)
+    // String QRIS Statis Mas Yusuf
     const QRIS_STATIS =
       "00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214504244849705970303UMI51440014ID.CO.QRIS.WWW0215ID20232921381120303UMI5204541153033605802ID5907WAGO ID6006JEPARA61055941162070703A016304CF48";
 
@@ -31,8 +63,11 @@ export default async function handler(req, res) {
     const totalPay = parseInt(price) + uniqueCode;
     const orderId = "ORD-" + Date.now();
 
-    // Generate QR Image dengan library QRCode
-    const qrImage = await QRCode.toDataURL(QRIS_STATIS, {
+    // UBAH MENJADI DINAMIS DENGAN NOMINAL
+    const qrisDinamis = makeDynamic(QRIS_STATIS, totalPay);
+
+    // Generate Gambar QR dari string yang sudah ada nominalnya
+    const qrImage = await QRCode.toDataURL(qrisDinamis, {
       margin: 2,
       scale: 10,
     });
