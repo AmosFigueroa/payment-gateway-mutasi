@@ -17,24 +17,21 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    // 1. Koneksi DB dipercepat
     if (mongoose.connection.readyState !== 1) {
       await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
     }
 
-    const { price, product_name, store_name, merchant_email } = req.body;
+    const { price, product_name, store_name } = req.body;
 
-    // 2. Logika QRIS Dinamis (Pastikan QRIS_STATIS Mas Valid)
+    // QRIS STATIS YANG BENAR (Tanpa teks git)
     const QRIS_STATIS =
-      "00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214504244849705970303UMI51440014ID.CO.QRIS.WWW0215ID20232921381120303UMI5204541153033605802ID5907WAGO ID6006JEPARA61055941162070703A016304CF48git add .
-git commit -m "Fix: Speed up checkout API and ensure QRIS image generated"
-git push origin main --force";
+      "00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214504244849705970303UMI51440014ID.CO.QRIS.WWW0215ID20232921381120303UMI5204541153033605802ID5907WAGO ID6006JEPARA61055941162070703A016304CF48";
 
     const uniqueCode = Math.floor(Math.random() * 99) + 1;
     const totalPay = parseInt(price) + uniqueCode;
     const orderId = "ORD-" + Date.now();
 
-    // Generate QR Image (Gunakan margin kecil agar cepat)
+    // Generate QR Image dengan library QRCode
     const qrImage = await QRCode.toDataURL(QRIS_STATIS, {
       margin: 2,
       scale: 10,
@@ -55,7 +52,6 @@ git push origin main --force";
       qris_name: store_name || "Wago Merchant",
     });
   } catch (error) {
-    console.error("Checkout Error:", error);
-    return res.status(500).json({ error: "Gagal membuat tagihan" });
+    return res.status(500).json({ error: error.message });
   }
 }
