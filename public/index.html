@@ -101,20 +101,6 @@
         transform: scale(1);
         opacity: 1;
       }
-      .btn-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 10px 16px;
-        border-radius: 14px;
-        font-weight: 700;
-        font-size: 11px;
-        transition: all 0.2s;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        color: #475569;
-      }
       .success-pop {
         animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards;
       }
@@ -180,13 +166,22 @@
             </p>
           </div>
         </div>
-        <button
-          onclick="openCancelModal()"
-          class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm active:scale-95 transition-all"
-        >
-          ✕
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            onclick="window.location.href = '/create-invoice.html'"
+            class="bg-slate-50 p-2 rounded-xl text-slate-400 border border-slate-200"
+          >
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          </button>
+          <button
+            onclick="openCancelModal()"
+            class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm active:scale-95 transition-all"
+          >
+            ✕
+          </button>
+        </div>
       </header>
+
       <main
         id="app-content"
         class="flex-1 overflow-y-auto no-scrollbar relative bg-[#f8fafc] p-4 pb-24"
@@ -198,6 +193,7 @@
     </div>
 
     <script>
+      const BASE_API = "https://payment-gateway-mutasi.vercel.app/api";
       let state = {
         productName: "",
         totalAmount: 0,
@@ -223,18 +219,15 @@
           params.get("prod") || "Pembayaran",
         );
         if (state.totalAmount > 0) renderStep1();
+        else
+          document.getElementById("app-content").innerHTML =
+            `<div class="flex flex-col items-center justify-center h-full p-8 text-center"><div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4"><i data-lucide="info" class="text-slate-400"></i></div><h3 class="font-bold text-slate-900">Gateway Aktif</h3><p class="text-[11px] text-slate-400 mt-2">Gunakan Portal Merchant untuk membuat tagihan baru.</p></div>`;
         lucide.createIcons();
       };
 
       function renderStep1() {
-        document.getElementById("app-content").innerHTML = `
-                <div class="px-4 py-4 fade-enter">
-                    <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 text-left">DETAIL PESANAN</h2>
-                    <div class="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 mb-8 text-left">
-                        <div class="mb-4"><p class="text-[10px] text-slate-400 font-bold uppercase">Nama Produk</p><p class="text-slate-800 font-bold text-lg">${state.productName}</p></div>
-                        <div class="pt-4 border-t border-slate-100"><p class="text-[10px] text-slate-400 font-bold uppercase">Total Tagihan</p><p class="text-2xl font-extrabold text-slate-800 tracking-tight">Rp ${state.totalAmount.toLocaleString("id-ID")}</p></div>
-                    </div>
-                </div>`;
+        document.getElementById("app-content").innerHTML =
+          `<div class="px-4 py-4 fade-enter"><h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 text-left">DETAIL PESANAN</h2><div class="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 mb-8 text-left"><div class="mb-4 text-left"><p class="text-[10px] text-slate-400 font-bold uppercase">Nama Produk</p><p class="text-slate-800 font-bold text-lg">${state.productName}</p></div><div class="pt-4 border-t border-slate-100 text-left"><p class="text-[10px] text-slate-400 font-bold uppercase">Total Tagihan</p><p class="text-2xl font-extrabold text-slate-800 tracking-tight">Rp ${state.totalAmount.toLocaleString("id-ID")}</p></div></div></div>`;
         document.getElementById("action-area").innerHTML =
           `<button onclick="processCheckout()" class="w-full bg-[#0f172a] text-white font-bold py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-sm uppercase tracking-wider">BAYAR SEKARANG</button>`;
       }
@@ -243,7 +236,7 @@
         const btn = document.querySelector("#action-area button");
         btn.innerText = "PROSES...";
         btn.disabled = true;
-        const res = await fetch("/api/checkout", {
+        const res = await fetch(`${BASE_API}/checkout`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -262,25 +255,76 @@
       }
 
       function renderStep2(apiData) {
-        document.getElementById("app-content").innerHTML = `
-                <div class="px-4 py-4 text-center fade-enter flex flex-col items-center">
-                    <div class="inline-flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-full border border-red-100 mb-6 animate-pulse">
-                        <i data-lucide="clock" class="w-3 h-3"></i> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1 font-bold">15:00</span>
-                    </div>
-                    <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-xl mb-6 relative overflow-hidden w-full">
-                        <div class="bg-[#bf1e2e] h-10 -mx-5 -mt-5 mb-5 flex items-center justify-between px-4"><img src="${qrisLogo}" class="h-5 brightness-0 invert"><span class="text-white font-bold text-[10px] uppercase">QRIS</span></div>
-                        <h3 class="font-bold mb-3 text-slate-800 text-sm uppercase">${apiData.qris_name || "MERCHANT QRIS"}</h3>
-                        <img src="${apiData.qr_image}" class="w-full max-w-[260px] mx-auto border-2 border-slate-900 rounded-lg p-1">
-                        <div class="mt-5 flex gap-2 justify-center"><button onclick="downloadQR('${apiData.qr_image}', '${apiData.order_id}')" class="btn-icon"><i data-lucide="download" class="w-4 h-4"></i> DOWNLOAD</button><button onclick="copyText('${apiData.total_pay}')" class="btn-icon"><i data-lucide="copy" class="w-4 h-4"></i> SALIN RP</button></div>
-                    </div>
-                    <h2 class="text-3xl font-black text-slate-800">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
-                    <p class="text-[10px] text-emerald-600 font-bold mt-1 uppercase">Termasuk kode unik (+${apiData.unique_code || 0})</p>
-                </div>`;
+        document.getElementById("app-content").innerHTML =
+          `<div class="px-4 py-4 text-center fade-enter flex flex-col items-center"><div class="inline-flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-full border border-red-100 mb-6 animate-pulse"><i data-lucide="clock" class="w-3 h-3"></i> SISA WAKTU <span id="timer" class="font-mono text-xs ml-1 font-bold">15:00</span></div><div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-xl mb-6 relative overflow-hidden w-full text-center"><div class="bg-[#bf1e2e] h-10 -mx-5 -mt-5 mb-5 flex items-center justify-between px-4"><img src="${qrisLogo}" class="h-5 brightness-0 invert"><span class="text-white font-bold text-[10px] uppercase">QRIS</span></div><h3 class="font-bold mb-3 text-slate-800 text-sm uppercase">${apiData.qris_name || "MERCHANT QRIS"}</h3><img src="${apiData.qr_image}" class="w-full max-w-[260px] mx-auto border-2 border-slate-900 rounded-lg p-1"><div class="mt-5 flex gap-2 justify-center"><button onclick="downloadQR('${apiData.qr_image}', '${apiData.order_id}')" class="bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-[9px] font-extrabold border border-slate-200 uppercase">⬇️ Download</button><button onclick="copyText('${apiData.total_pay}')" class="bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-[9px] font-extrabold border border-slate-200 uppercase">📋 Salin Rp</button></div></div><h2 class="text-3xl font-black text-slate-800">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2><p class="text-[10px] text-emerald-600 font-bold mt-1 uppercase">Termasuk kode unik (+${apiData.unique_code || 0})</p></div>`;
         document.getElementById("action-area").innerHTML =
           `<button onclick="openCancelModal()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs shadow-sm">BATALKAN TRANSAKSI</button>`;
         lucide.createIcons();
         startCountdown(15 * 60);
         startCheckingStatus(apiData.order_id);
+      }
+
+      function startCheckingStatus(id) {
+        const checker = setInterval(async () => {
+          const res = await fetch(
+            `${BASE_API}/status?order_id=${id}&t=${Date.now()}`,
+          );
+          const d = await res.json();
+          if (d.status === "PAID") {
+            clearInterval(checker);
+            if (state.mainTimer) clearInterval(state.mainTimer);
+            if (d.total_pay) state.totalAmount = d.total_pay;
+            if (d.product_name) state.productName = d.product_name;
+            renderStep3();
+          }
+        }, 3000);
+      }
+
+      function renderStep3() {
+        const dateStr = new Date()
+          .toLocaleString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          .replace(".", ":");
+        document.getElementById("app-content").innerHTML = `
+                <div class="p-2 success-pop flex flex-col items-center justify-center">
+                    <div class="w-full bg-white shadow-2xl rounded-[1.5rem] overflow-hidden relative border border-slate-100 min-h-[380px]">
+                        <div class="h-2 bg-emerald-500 w-full"></div>
+                        <div class="p-8 text-center border-b border-dashed border-slate-200 bg-white">
+                            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm"><i data-lucide="check-circle" class="w-8 h-8 text-emerald-500"></i></div>
+                            <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Pembayaran Lunas</h2>
+                            <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Terima kasih, pesanan Anda telah lunas</p>
+                        </div>
+                        <div class="p-8 bg-[#f8fafc] text-[11px] space-y-4 font-bold text-left">
+                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>Tanggal</span><span class="text-slate-700 font-bold normal-case">${dateStr}</span></div>
+                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>ID Transaksi</span><span class="font-mono text-slate-700 uppercase">${state.refId}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold uppercase tracking-wider">Order ID</span><div class="flex items-center gap-1"><span class="font-bold font-mono text-slate-700 text-[10px]">${state.orderId}</span><button onclick="copyText('${state.orderId}')" class="bg-slate-200 p-1 rounded text-[9px] font-extrabold uppercase">Salin</button></div></div>
+                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>Item</span><span class="text-slate-700 uppercase">${state.productName}</span></div>
+                            <div class="pt-6 border-t border-slate-200 flex justify-between items-center">
+                                <span class="text-slate-400 uppercase tracking-widest text-[9px]">Total Paid</span>
+                                <span class="text-3xl font-black text-emerald-600">Rp ${state.totalAmount.toLocaleString("id-ID")}</span>
+                            </div>
+                        </div><div class="receipt-cut"></div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-bold text-center">Otomatis kembali dalam <span id="redirect-timer" class="text-slate-900 font-bold">10</span> detik</p>
+                </div>`;
+        document.getElementById("action-area").innerHTML =
+          `<button onclick="window.location.href='${state.returnUrl}'" class="w-full py-4 bg-[#0f172a] text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all">KEMBALI KE TOKO</button>`;
+        lucide.createIcons();
+        let s = 10;
+        const rt = setInterval(() => {
+          s--;
+          if (document.getElementById("redirect-timer"))
+            document.getElementById("redirect-timer").innerText = s;
+          if (s <= 0) {
+            clearInterval(rt);
+            window.location.href = state.returnUrl;
+          }
+        }, 1000);
       }
 
       function openCancelModal() {
@@ -303,7 +347,6 @@
           .writeText(text)
           .then(() => alert("Berhasil disalin!"));
       }
-
       function startCountdown(duration) {
         let timer = duration;
         state.mainTimer = setInterval(() => {
@@ -315,68 +358,6 @@
           if (--timer < 0) {
             clearInterval(state.mainTimer);
             location.reload();
-          }
-        }, 1000);
-      }
-
-      function startCheckingStatus(id) {
-        const checker = setInterval(async () => {
-          const res = await fetch(`/api/status?order_id=${id}&t=${Date.now()}`);
-          const d = await res.json();
-          if (d.status === "PAID") {
-            clearInterval(checker);
-            if (state.mainTimer) clearInterval(state.mainTimer);
-            // AMBIL NOMINAL TOTAL DARI DATABASE (HARGA + KODE UNIK)
-            if (d.total_pay) state.totalAmount = d.total_pay;
-            if (d.product_name) state.productName = d.product_name;
-            renderStep3();
-          }
-        }, 3000);
-      }
-
-      function renderStep3() {
-        const dateStr = new Date()
-          .toLocaleString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-          .replace(".", ":");
-        document.getElementById("app-content").innerHTML = `
-                <div class="p-2 success-pop flex flex-col items-center justify-center">
-                    <div class="w-full bg-white shadow-2xl rounded-[1.5rem] overflow-hidden relative border border-slate-100">
-                        <div class="h-2 bg-emerald-500 w-full"></div>
-                        <div class="p-6 text-center border-b border-dashed border-slate-200 bg-white">
-                            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-emerald-100 shadow-sm"><i data-lucide="check-circle" class="w-8 h-8 text-emerald-500"></i></div>
-                            <h2 class="text-xl font-black text-slate-900 uppercase">Pembayaran Lunas</h2>
-                            <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Terima kasih, pesanan Anda telah lunas</p>
-                        </div>
-                        <div class="p-6 bg-[#f8fafc] text-[11px] space-y-3 font-bold text-left">
-                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>Tanggal</span><span class="text-slate-700 font-bold normal-case">${dateStr}</span></div>
-                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>ID Transaksi</span><span class="font-mono text-slate-700 uppercase">${state.refId}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold uppercase tracking-wider">Order ID</span><div class="flex items-center gap-1"><span class="font-bold font-mono text-slate-700 text-[10px]">${state.orderId}</span><button onclick="copyText('${state.orderId}')" class="bg-slate-200 p-1 rounded text-[9px] font-bold">SALIN</button></div></div>
-                            <div class="flex justify-between text-slate-400 uppercase tracking-wider"><span>Item</span><span class="text-slate-700 uppercase">${state.productName}</span></div>
-                            <div class="pt-4 border-t border-slate-200 flex justify-between items-center">
-                                <span class="text-slate-400 uppercase tracking-widest text-[9px]">Total Paid</span>
-                                <span class="text-2xl font-black text-emerald-600">Rp ${state.totalAmount.toLocaleString("id-ID")}</span>
-                            </div>
-                        </div><div class="receipt-cut"></div>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-bold text-center">Otomatis kembali dalam <span id="redirect-timer" class="text-slate-900 font-bold">10</span> detik</p>
-                </div>`;
-        document.getElementById("action-area").innerHTML =
-          `<button onclick="window.location.href='${state.returnUrl}'" class="w-full py-4 bg-[#0f172a] text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all">KEMBALI KE TOKO</button>`;
-        lucide.createIcons();
-        let s = 10;
-        const rt = setInterval(() => {
-          s--;
-          if (document.getElementById("redirect-timer"))
-            document.getElementById("redirect-timer").innerText = s;
-          if (s <= 0) {
-            clearInterval(rt);
-            window.location.href = state.returnUrl;
           }
         }, 1000);
       }
