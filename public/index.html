@@ -2,60 +2,104 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Wago Payment - QRIS Checkout</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap");
       body {
         font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: #0f172a;
+      }
+      .success-pop {
+        animation: successPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.2) forwards;
+      }
+      @keyframes successPop {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
     </style>
   </head>
-  <body class="bg-slate-50 min-h-screen flex flex-col items-center">
+  <body class="min-h-screen flex items-center justify-center p-4">
     <div
-      class="w-full max-w-md bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center sticky top-0 z-50"
+      id="main-container"
+      class="w-full max-w-[400px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-500 min-h-[600px]"
     >
-      <div class="flex items-center gap-2">
-        <div class="bg-emerald-500 p-1.5 rounded-lg">
-          <i data-lucide="shield-check" class="text-white w-5 h-5"></i>
-        </div>
-        <h1 id="header-title" class="font-bold text-slate-800 text-lg">
-          Wago Payment
-        </h1>
-      </div>
-      <a
-        href="/merchant"
-        class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-full transition-all flex items-center gap-1"
+      <header
+        class="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-50"
       >
-        <i data-lucide="layout-dashboard" class="w-3 h-3"></i> Portal
-      </a>
+        <div class="flex items-center gap-3">
+          <img
+            src="https://i.ibb.co.com/S4Lh26Bt/logo-wago-payment-id.png"
+            class="w-10 h-10 object-contain"
+          />
+          <div>
+            <h1
+              id="header-title"
+              class="font-bold text-slate-900 text-base leading-tight"
+            >
+              Wagopay
+            </h1>
+            <p
+              class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1"
+            >
+              <span
+                class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
+              ></span>
+              Secure Transaction
+            </p>
+          </div>
+        </div>
+        <button
+          onclick="window.location.reload()"
+          class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 active:scale-95 transition-all"
+        >
+          ✕
+        </button>
+      </header>
+
+      <main id="app-content" class="flex-1 p-6 bg-[#f8fafc] overflow-y-auto">
+        <div class="flex flex-col items-center justify-center h-full py-20">
+          <div
+            class="w-10 h-10 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"
+          ></div>
+          <p
+            class="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest"
+          >
+            Inisialisasi Tagihan...
+          </p>
+        </div>
+      </main>
+
+      <footer
+        id="action-area"
+        class="p-5 bg-white border-t border-slate-100"
+      ></footer>
     </div>
 
-    <main id="app-content" class="w-full max-w-md p-6">
-      <div class="flex flex-col items-center justify-center py-20">
-        <div
-          class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"
-        ></div>
-        <p class="mt-4 text-slate-500 font-medium">Memuat Tagihan...</p>
-      </div>
-    </main>
-
-    <footer id="action-area" class="w-full max-w-md p-6 mt-auto"></footer>
-
     <script>
-      // --- KONFIGURASI API ---
-      const BASE_API = "/api"; // Gunakan path relatif agar lebih stabil di Vercel
-      const qrisLogo =
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png";
+      const BASE_API = "/api";
+      // LINK LOGO QRIS CADANGAN (PASTI JALAN)
+      const qrisLogo = "https://i.ibb.co.com/X4YQ0V0/qris-white.png";
 
       let state = {
-        productName: "Pembayaran",
+        productName: "",
         totalAmount: 0,
-        merchantEmail: "",
-        storeName: "Wago Store",
-        orderId: "",
+        storeName: "Wagopay",
+        returnUrl: "",
       };
 
       window.onload = function () {
@@ -64,123 +108,91 @@
         state.productName = decodeURIComponent(
           params.get("prod") || "Pembayaran",
         );
-        state.merchantEmail = params.get("merchant") || "admin@wagopayment.id";
-        state.storeName = decodeURIComponent(
-          params.get("store") || "Wago Store",
-        );
+        state.storeName = decodeURIComponent(params.get("store") || "Wagopay");
+        state.returnUrl = params.get("return") || "/";
 
         document.getElementById("header-title").innerText = state.storeName;
 
-        if (state.totalAmount > 0) {
-          renderStep1();
-        } else {
-          document.getElementById("app-content").innerHTML = `
-                    <div class="text-center py-10">
-                        <i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
-                        <p class="text-slate-700 font-bold">Data tidak valid</p>
-                        <p class="text-sm text-slate-500">Harap gunakan link pembayaran yang benar.</p>
-                    </div>
-                `;
-        }
+        if (state.totalAmount > 0) renderStep1();
+        else showError("Link Pembayaran Tidak Valid");
         lucide.createIcons();
       };
 
       function renderStep1() {
         document.getElementById("app-content").innerHTML = `
-                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mb-6">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Nama Produk</p>
-                    <h2 class="text-xl font-extrabold text-slate-800 mb-4">${state.productName}</h2>
-                    <hr class="border-dashed mb-4">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Pembayaran</p>
-                    <h2 class="text-3xl font-black text-emerald-600">Rp ${state.totalAmount.toLocaleString("id-ID")}</h2>
-                </div>
-            `;
+                <div class="fade-enter">
+                    <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Detail Pesanan</h2>
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6">
+                        <p class="text-xs text-slate-400 font-medium mb-1">Item:</p>
+                        <h3 class="font-bold text-slate-900 text-lg mb-4">${state.productName}</h3>
+                        <div class="pt-4 border-t border-dashed border-slate-200">
+                            <p class="text-xs text-slate-400 font-medium mb-1">Total Tagihan:</p>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Rp ${state.totalAmount.toLocaleString("id-ID")}</h2>
+                        </div>
+                    </div>
+                </div>`;
         document.getElementById("action-area").innerHTML = `
-                <button onclick="processCheckout()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                    BAYAR SEKARANG <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                </button>
-            `;
+                <button onclick="processCheckout()" class="w-full bg-[#0f172a] text-white font-bold py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                    LANJUTKAN PEMBAYARAN <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>`;
         lucide.createIcons();
       }
 
       async function processCheckout() {
         const btn = document.querySelector("#action-area button");
-        btn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> PROSES...`;
+        btn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> MEMPROSES...`;
         btn.disabled = true;
 
         try {
-          const response = await fetch(`${BASE_API}/checkout`, {
+          const res = await fetch(`${BASE_API}/checkout`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               price: state.totalAmount,
               product_name: state.productName,
               store_name: state.storeName,
-              merchant_email: state.merchantEmail,
             }),
           });
-
-          const data = await response.json();
-          if (data.status === "success") {
-            renderStep2(data);
-          } else {
-            alert("Error: " + data.error);
-            renderStep1();
-          }
-        } catch (error) {
-          alert("Koneksi gagal!");
-          renderStep1();
+          const d = await res.json();
+          if (d.status === "success") renderStep2(d);
+          else showError(d.error);
+        } catch (e) {
+          showError("Koneksi Server Gagal");
         }
       }
 
-      function renderStep2(apiData) {
+      function renderStep2(d) {
         document.getElementById("app-content").innerHTML = `
-                <div class="bg-white rounded-3xl overflow-hidden border shadow-xl animate-in fade-in zoom-in duration-300">
-                    <div class="bg-[#bf1e2e] py-3 flex justify-center">
-                        <img src="${qrisLogo}" class="h-6 brightness-0 invert">
-                    </div>
-                    
-                    <div class="p-6 text-center">
-                        <p class="text-sm font-bold text-slate-800 mb-1 uppercase">${state.storeName}</p>
-                        <p class="text-[10px] text-slate-400 mb-4">NMID: ID1024363913731</p>
-                        
-                        <div class="bg-white p-2 border-2 border-slate-900 rounded-xl inline-block mb-4">
-                            <img src="${apiData.qr_image}" class="w-64 h-64 mx-auto">
+                <div class="success-pop flex flex-col items-center">
+                    <div class="w-full bg-white rounded-[2rem] border-2 border-slate-100 shadow-xl overflow-hidden mb-6">
+                        <div class="bg-[#bf1e2e] py-3 flex justify-center">
+                            <img src="${qrisLogo}" style="height: 24px; width: auto;" alt="QRIS">
                         </div>
+                        <div class="p-6 text-center">
+                            <p class="text-[10px] font-bold text-slate-800 uppercase mb-4 tracking-widest">${state.storeName}</p>
+                            
+                            <div class="bg-white p-3 border-2 border-slate-900 rounded-2xl inline-block shadow-sm">
+                                <img src="${d.qr_image}" class="w-64 h-64 mx-auto block" alt="Scan QRIS">
+                            </div>
+                            
+                            <div class="mt-6 bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                                <p class="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Yang Harus Dibayar</p>
+                                <h2 class="text-3xl font-black text-slate-900 tracking-tighter">Rp ${d.total_pay.toLocaleString("id-ID")}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest animate-pulse">Menunggu Pembayaran...</p>
+                </div>`;
+        document.getElementById("action-area").innerHTML =
+          `<button onclick="window.location.reload()" class="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl border border-slate-200 text-xs uppercase tracking-widest">Batalkan</button>`;
+      }
 
-                        <div class="bg-emerald-50 rounded-2xl py-4 border border-emerald-100">
-                            <p class="text-xs font-bold text-emerald-600 mb-1">TOTAL BAYAR (TERMASUK KODE UNIK)</p>
-                            <h2 class="text-3xl font-black text-slate-900">Rp ${apiData.total_pay.toLocaleString("id-ID")}</h2>
-                        </div>
-                        
-                        <p class="text-[10px] text-slate-400 mt-4 leading-relaxed">
-                            Mohon transfer sesuai nominal hingga 3 digit terakhir.<br>
-                            Sistem akan mendeteksi pembayaran secara otomatis.
-                        </p>
-                    </div>
-                </div>
-            `;
-        document.getElementById("action-area").innerHTML = `
-                <div class="text-center">
-                    <p class="text-sm text-slate-500 mb-2">Menunggu pembayaran...</p>
-                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-emerald-500 h-full animate-[progress_30s_linear_infinite]"></div>
-                    </div>
-                </div>
-            `;
+      function showError(msg) {
+        document.getElementById("app-content").innerHTML =
+          `<div class="flex flex-col items-center justify-center h-full text-center p-8"><i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mb-4"></i><h3 class="font-bold text-slate-900">${msg}</h3><button onclick="location.reload()" class="mt-4 text-emerald-600 font-bold text-xs uppercase">Coba Lagi</button></div>`;
+        document.getElementById("action-area").innerHTML = "";
         lucide.createIcons();
       }
     </script>
-
-    <style>
-      @keyframes progress {
-        from {
-          width: 0%;
-        }
-        to {
-          width: 100%;
-        }
-      }
-    </style>
   </body>
 </html>
